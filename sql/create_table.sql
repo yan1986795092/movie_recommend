@@ -28,74 +28,59 @@ CREATE TABLE IF NOT EXISTS `user`
 -- 爬虫建表
 CREATE TABLE IF NOT EXISTS `movie`
 (
-    `movieId`             BIGINT AUTO_INCREMENT COMMENT '电影id' PRIMARY KEY,
-    `name`                TEXT                                                           NOT NULL COMMENT '电影名',
-    `director`            TEXT                                                           COMMENT '导演',
-    `actors`              TEXT                                                           COMMENT '主演',
-    `type`                TEXT                                                           NULL COMMENT '类型',
-    `country`             TEXT                                                           NULL COMMENT '制片国家/地区',
-    `releaseDate`         TEXT                                                           NULL COMMENT '上映日期',
-    `runtime`             TEXT                                                           NULL COMMENT '片长',
-    `ratingNum`           TEXT                                                           NULL COMMENT '豆瓣评分',
-    `tags`                TEXT                                                           NULL COMMENT '电影简介',
-    `movieUrl`            TEXT                                                           NULL COMMENT '电影地址',
-    `local`               TEXT                                                           NULL COMMENT '照片本地址',
-    `createTime`          DATETIME DEFAULT CURRENT_TIMESTAMP                             NOT NULL COMMENT '创建时间',
-    `updateTime`          DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL COMMENT '更新时间'
+    `movieId`     BIGINT AUTO_INCREMENT COMMENT '电影id' PRIMARY KEY,
+    `userID`      BIGINT                                                         Null comment '创建用户id',
+    `name`        TEXT                                                           NOT NULL COMMENT '电影名',
+    `director`    TEXT                                                           NULL COMMENT '导演',
+    `actors`      TEXT                                                           NULL COMMENT '主演',
+    `type`        TEXT                                                           NULL COMMENT '类型',
+    `country`     TEXT                                                           NULL COMMENT '制片国家/地区',
+    `releaseDate` TEXT                                                           NULL COMMENT '上映日期',
+    `runtime`     TEXT                                                           NULL COMMENT '片长',
+    `ratingNum`   TEXT                                                           NULL COMMENT '豆瓣评分',
+    `thumbNum`    int      default 0                                             NULL comment '点赞数',
+    `favourNum`   int      default 0                                             NULL comment '收藏数',
+    `tags`        TEXT                                                           NULL COMMENT '电影简介',
+    `movieUrl`    TEXT                                                           NULL COMMENT '电影地址',
+    `local`       TEXT                                                           NULL COMMENT '照片本地地址',
+    `createTime`  DATETIME DEFAULT CURRENT_TIMESTAMP                             NOT NULL COMMENT '创建时间',
+    `updateTime`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL COMMENT '更新时间'
 ) DEFAULT CHARSET = utf8 COMMENT ='电影表';
 
-
-CREATE TABLE IF NOT EXISTS `comments`
-(
-    `commentsID`          BIGINT    auto_increment  comment '评论id' primary key,
-    `movieID`             BIGINT                                                         Null comment '电影id',
-    `commentInfo`         TEXT                                                           NULL COMMENT '评论内容',
-    `commentAuthor`       TEXT                                                           NULL COMMENT '评论者',
-    `commentAuthorImgUrl` TEXT                                                           NULL COMMENT '评论者头像',
-    `commentVote`         TEXT                                                           NULL COMMENT '评论点赞数',
-    `commentDate`         TEXT                                                           NULL COMMENT '评论时间',
-    `createTime`          DATETIME DEFAULT CURRENT_TIMESTAMP                             NOT NULL COMMENT '创建时间',
-    `updateTime`          DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL COMMENT '更新时间'
-)DEFAULT CHARSET = utf8 COMMENT ='影评表';
-
-
--- 帖子表
+-- 评论表
 create table if not exists post
 (
     id         bigint auto_increment comment 'id' primary key,
-    title      varchar(512)                       null comment '标题',
+    movieId    bigint                             null comment '电影id',
+    userId     bigint                             null comment '创建用户 id',
     content    text                               null comment '内容',
-    tags       varchar(1024)                      null comment '标签列表（json 数组）',
-    thumbNum   int      default 0                 not null comment '点赞数',
-    favourNum  int      default 0                 not null comment '收藏数',
-    userId     bigint                             not null comment '创建用户 id',
-    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete   tinyint  default 0                 not null comment '是否删除',
+    createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete   tinyint  default 0                 null comment '是否删除',
     index idx_userId (userId)
-) comment '帖子' collate = utf8mb4_unicode_ci;
+) comment '评论' collate = utf8mb4_unicode_ci;
 
--- 帖子点赞表（硬删除）
+-- 评论点赞表（硬删除）
 create table if not exists post_thumb
 (
     id         bigint auto_increment comment 'id' primary key,
-    postId     bigint                             not null comment '帖子 id',
-    userId     bigint                             not null comment '创建用户 id',
-    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    index idx_postId (postId),
+    movieId    bigint                             null comment '电影 id',
+    userId     bigint                             null comment '创建用户 id',
+    createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    index idx_postId (movieId),
     index idx_userId (userId)
-) comment '帖子点赞';
+) comment '电影点赞';
 
 
--- 帖子收藏表（硬删除）
+-- 评论收藏表（硬删除）
 create table if not exists post_favour
 (
     id         bigint auto_increment comment 'id' primary key,
-    postId     bigint                             not null comment '帖子 id',
-    userId     bigint                             not null comment '创建用户 id',
-    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    index idx_postId (postId),
+    movieId    bigint                             null comment '电影 id',
+    userId     bigint                             null comment '创建用户 id',
+    createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    index idx_postId (movieId),
     index idx_userId (userId)
-) comment '帖子收藏';
+) comment '电影收藏';

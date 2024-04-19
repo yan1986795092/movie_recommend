@@ -10,13 +10,13 @@ import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.springbootinit.exception.ThrowUtils;
 import com.yupi.springbootinit.mapper.MovieMapper;
 import com.yupi.springbootinit.model.dto.movie.MovieQueryRequest;
-import com.yupi.springbootinit.model.entity.Movie;
 import com.yupi.springbootinit.model.entity.User;
 import com.yupi.springbootinit.model.vo.MovieVO;
 import com.yupi.springbootinit.model.vo.UserVO;
 import com.yupi.springbootinit.service.MovieService;
 import com.yupi.springbootinit.service.UserService;
 import com.yupi.springbootinit.utils.SqlUtils;
+import com.yupi.springbootinit.model.entity.Movie;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -40,7 +40,8 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
 
     @Resource
     private UserService userService;
-
+    @Resource
+    private CommentsService commentsService;
 
     @Override
     public void validMovie(Movie movie, boolean add) {
@@ -104,7 +105,6 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
     @Override
     public MovieVO getMovieVO(Movie movie, HttpServletRequest request) {
         MovieVO movieVO = MovieVO.objToVo(movie);
-        long movieId = movie.getMovieId();
         // 1. 关联查询用户信息
         Long userId = movie.getUserId();
         User user = null;
@@ -113,6 +113,15 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
         }
         UserVO userVO = userService.getUserVO(user);
         movieVO.setUser(userVO);
+
+        // 1. 关联查询用户信息
+        Long CommentsId = movie.();
+        User user = null;
+        if (userId != null && userId > 0) {
+            user = userService.getById(userId);
+        }
+        CommentsVO commentsVO = CommentsService.getcommentsVO(comments);
+        movieVO.setCommentsVO(commentsVO);
         return movieVO;
     }
 

@@ -1,32 +1,29 @@
 package com.yupi.springbootinit.model.dto.post;
 
-import java.io.Serializable;
-import java.util.List;
 import lombok.Data;
+
+import java.io.Serializable;
 
 /**
  * 创建请求
- *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @Data
 public class PostAddRequest implements Serializable {
-
+    private static final long serialVersionUID = 1L;
     /**
-     * 标题
+     * id
      */
-    private String title;
-
+    private Long id;
+    /**
+     * 电影id
+     */
+    private Long movieId;
+    /**
+     * 创建用户 id
+     */
+    private Long userid;
     /**
      * 内容
      */
     private String content;
-
-    /**
-     * 标签列表
-     */
-    private List<String> tags;
-
-    private static final long serialVersionUID = 1L;
 }

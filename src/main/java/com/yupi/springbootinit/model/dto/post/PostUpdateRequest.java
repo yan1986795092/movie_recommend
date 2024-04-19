@@ -6,9 +6,6 @@ import lombok.Data;
 
 /**
  * 更新请求
- *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @Data
 public class PostUpdateRequest implements Serializable {
@@ -19,19 +16,19 @@ public class PostUpdateRequest implements Serializable {
     private Long id;
 
     /**
-     * 标题
+     * 电影id
      */
-    private String title;
+    private Long movieId;
+
+    /**
+     * 创建用户 id
+     */
+    private Long userid;
 
     /**
      * 内容
      */
     private String content;
-
-    /**
-     * 标签列表
-     */
-    private List<String> tags;
 
     private static final long serialVersionUID = 1L;
 }

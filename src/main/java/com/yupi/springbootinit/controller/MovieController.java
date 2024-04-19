@@ -2,18 +2,15 @@ package com.yupi.springbootinit.controller;
 
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yupi.springbootinit.annotation.AuthCheck;
 import com.yupi.springbootinit.common.BaseResponse;
 import com.yupi.springbootinit.common.DeleteRequest;
 import com.yupi.springbootinit.common.ErrorCode;
 import com.yupi.springbootinit.common.ResultUtils;
-import com.yupi.springbootinit.constant.UserConstant;
 import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.springbootinit.exception.ThrowUtils;
 import com.yupi.springbootinit.model.dto.movie.MovieAddRequest;
 import com.yupi.springbootinit.model.dto.movie.MovieQueryRequest;
 import com.yupi.springbootinit.model.dto.movie.MovieUpdateRequest;
-import com.yupi.springbootinit.model.entity.Movie;
 import com.yupi.springbootinit.model.entity.User;
 import com.yupi.springbootinit.model.vo.MovieVO;
 import com.yupi.springbootinit.service.MovieService;
