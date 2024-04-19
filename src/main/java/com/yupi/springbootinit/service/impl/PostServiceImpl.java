@@ -10,7 +10,6 @@ import com.yupi.springbootinit.exception.ThrowUtils;
 import com.yupi.springbootinit.mapper.PostFavourMapper;
 import com.yupi.springbootinit.mapper.PostMapper;
 import com.yupi.springbootinit.mapper.PostThumbMapper;
-import com.yupi.springbootinit.model.dto.post.PostEsDTO;
 import com.yupi.springbootinit.model.dto.post.PostQueryRequest;
 import com.yupi.springbootinit.model.entity.Post;
 import com.yupi.springbootinit.model.entity.PostFavour;

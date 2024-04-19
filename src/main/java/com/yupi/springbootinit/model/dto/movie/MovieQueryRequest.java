@@ -5,8 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
+
 
 /**
  * @Author yqq
@@ -18,98 +17,92 @@ import java.util.List;
 @Data
 public class MovieQueryRequest extends PageRequest implements Serializable {
 
-    private static final long serialVersionUID = 1L;
     /**
      * 电影id
      */
     private Long movieId;
+
     /**
-     * 搜索词
+     * 创建用户id
      */
-    private String searchText;
+    private Long userId;
+
     /**
      * 电影名
      */
     private String name;
+
     /**
      * 导演
      */
     private String director;
-    /**
-     * 编剧
-     */
-    private String scenarist;
+
     /**
      * 主演
      */
     private String actors;
+
     /**
      * 类型
      */
-    private List<String> type;
+    private String type;
+
     /**
      * 制片国家/地区
      */
     private String country;
-    /**
-     * 语言
-     */
-    private String language;
-    /**
-     * 上映日期
-     */
-    private String releaseDate;
+
+
     /**
      * 片长
      */
     private String runtime;
+
     /**
      * 豆瓣评分
      */
     private String ratingNum;
+
     /**
-     * 标签
+     * 点赞数
+     */
+    private Integer thumbNum;
+
+    /**
+     * 收藏数
+     */
+    private Integer favourNum;
+
+    /**
+     * 电影简介
      */
     private String tags;
-    /**
-     * 创建用户 id
-     */
-    private Long userId;
-
-    private String commentInfo;
 
     /**
-     * 评论者
-     */
-    private String commentAuthor;
-
-    /**
-     * 评论者头像
-     */
-    private String commentAuthorImgUrl;
-
-    /**
-     * 评论点赞数
-     */
-    private String commentVote;
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
-    /**
-     * 照片地址
+     * 电影地址
      */
     private String movieUrl;
+
     /**
      * 照片本地地址
      */
     private String local;
     /**
-     * 评论时间
+     * 搜索词
      */
-    private String commentDate;
+    private String searchText;
+
+    /**
+     * 点赞用户 id
+     */
+    private Long thumbUserId;
+
+    /**
+     * 收藏用户 id
+     */
+    private Long favourUserId;
+
+
+    private static final long serialVersionUID = 1L;
+
 }

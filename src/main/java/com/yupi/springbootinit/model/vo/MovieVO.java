@@ -1,8 +1,9 @@
 package com.yupi.springbootinit.model.vo;
 
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.yupi.springbootinit.model.entity.Movie;
-import com.yupi.springbootinit.model.entity.Post;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
@@ -17,63 +18,56 @@ import java.util.List;
  */
 @Data
 public class MovieVO {
+    private static final long serialVersionUID = 1L;
     /**
      * 电影id
      */
+    @TableId(type = IdType.AUTO)
     private Long movieId;
-
+    /**
+     * 创建用户id
+     */
+    private Long userId;
     /**
      * 电影名
      */
     private String name;
-
     /**
      * 导演
      */
     private String director;
-
-    /**
-     * 编剧
-     */
-    private String scenarist;
-
     /**
      * 主演
      */
-    private String actors;
-
+    private List<String> actors;
     /**
      * 类型
      */
-    private List<String> type;
-
+    private String type;
     /**
      * 制片国家/地区
      */
     private String country;
-
-
+    /**
+     * 上映日期
+     */
+    private String releaseDate;
     /**
      * 片长
      */
     private String runtime;
-
     /**
      * 豆瓣评分
      */
     private String ratingNum;
-
     /**
-     * 电影简介
+     * 点赞数
      */
-    private String tags;
-
+    private Integer thumbNum;
     /**
-     * 创建用户 id
+     * 收藏数
      */
-
-    private Long userId;
-
+    private Integer favourNum;
     /**
      * 创建人信息
      */
@@ -81,12 +75,31 @@ public class MovieVO {
     /**
      * 评论信息
      */
-    private CommentsVO commentsVO;
+    private PostVO postVO;
+    /**
+     * 是否已点赞
+     */
+    private Boolean hasThumb;
+    /**
+     * 是否已收藏
+     */
+    private Boolean hasFavour;
+    /**
+     * 电影简介
+     */
+    private String tags;
+    /**
+     * 电影地址
+     */
+    private String movieUrl;
+    /**
+     * 照片本地地址
+     */
+    private String local;
     /**
      * 创建时间
      */
     private Date createTime;
-
     /**
      * 更新时间
      */
@@ -96,12 +109,13 @@ public class MovieVO {
         if (movieVO == null) {
             return null;
         }
-       Movie movie = new Movie();
+        Movie movie = new Movie();
         BeanUtils.copyProperties(movieVO, movie);
-        List<String> typeList = movieVO.getType();
-        movie.setTags(JSONUtil.toJsonStr(typeList));
+        List<String> actorsList = movieVO.getActors();
+        movie.setTags(JSONUtil.toJsonStr(actorsList));
         return movie;
     }
+
     /**
      * 对象转包装类
      *
@@ -114,7 +128,7 @@ public class MovieVO {
         }
         MovieVO movieVO = new MovieVO();
         BeanUtils.copyProperties(movie, movieVO);
-        movieVO.setType(JSONUtil.toList(movie.getType(), String.class));
+        movieVO.setActors(JSONUtil.toList(movie.getActors(), String.class));
         return movieVO;
     }
 }

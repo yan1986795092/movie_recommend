@@ -10,9 +10,6 @@ import java.io.Serializable;
 import java.util.List;
 /**
  * 查询请求
- *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -24,44 +21,19 @@ public class  PostQueryRequest extends PageRequest implements Serializable {
     private Long id;
 
     /**
-     * id
+     * 电影id
      */
-    private Long notId;
+    private Long movieId;
 
     /**
-     * 搜索词
+     * 创建用户 id
      */
-    private String searchText;
-
-    /**
-     * 标题
-     */
-    private String title;
+    private Long userid;
 
     /**
      * 内容
      */
     private String content;
-
-    /**
-     * 标签列表
-     */
-    private List<String> tags;
-
-    /**
-     * 至少有一个标签
-     */
-    private List<String> orTags;
-
-    /**
-     * 创建用户 id
-     */
-    private Long userId;
-
-    /**
-     * 收藏用户 id
-     */
-    private Long favourUserId;
 
     private static final long serialVersionUID = 1L;
 }

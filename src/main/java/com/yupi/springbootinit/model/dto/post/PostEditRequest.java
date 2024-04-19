@@ -2,6 +2,9 @@ package com.yupi.springbootinit.model.dto.post;
 
 import java.io.Serializable;
 import java.util.List;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 /**
@@ -16,19 +19,19 @@ public class PostEditRequest implements Serializable {
     private Long id;
 
     /**
-     * 标题
+     * 电影id
      */
-    private String title;
+    private Long movieId;
+
+    /**
+     * 创建用户 id
+     */
+    private Long userid;
 
     /**
      * 内容
      */
     private String content;
-
-    /**
-     * 标签列表
-     */
-    private List<String> tags;
 
     private static final long serialVersionUID = 1L;
 }

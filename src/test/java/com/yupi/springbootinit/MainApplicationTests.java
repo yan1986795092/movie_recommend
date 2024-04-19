@@ -3,7 +3,6 @@ package com.yupi.springbootinit;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.yupi.springbootinit.config.WxOpenConfig;
-import com.yupi.springbootinit.model.entity.Movie;
 import com.yupi.springbootinit.service.MovieService;
 import com.yupi.springbootinit.utils.HttpUtils;
 import org.jsoup.Jsoup;
