@@ -8,21 +8,26 @@ import com.yupi.springbootinit.common.ErrorCode;
 import com.yupi.springbootinit.constant.CommonConstant;
 import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.springbootinit.exception.ThrowUtils;
+import com.yupi.springbootinit.mapper.MovieFavourMapper;
 import com.yupi.springbootinit.mapper.MovieMapper;
+import com.yupi.springbootinit.mapper.MovieThumbMapper;
 import com.yupi.springbootinit.model.dto.movie.MovieQueryRequest;
+import com.yupi.springbootinit.model.entity.Movie;
+import com.yupi.springbootinit.model.entity.MovieFavour;
+import com.yupi.springbootinit.model.entity.MovieThumb;
 import com.yupi.springbootinit.model.entity.User;
 import com.yupi.springbootinit.model.vo.MovieVO;
 import com.yupi.springbootinit.model.vo.UserVO;
 import com.yupi.springbootinit.service.MovieService;
 import com.yupi.springbootinit.service.UserService;
 import com.yupi.springbootinit.utils.SqlUtils;
-import com.yupi.springbootinit.model.entity.Movie;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,8 +45,12 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
 
     @Resource
     private UserService userService;
+
     @Resource
-    private CommentsService commentsService;
+    private MovieThumbMapper movieThumbMapper;
+
+    @Resource
+    private MovieFavourMapper movieFavourMapper;
 
     @Override
     public void validMovie(Movie movie, boolean add) {
@@ -74,28 +83,32 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
         if (movieQueryRequest == null) {
             return queryWrapper;
         }
-
-        Long movieId = movieQueryRequest.getMovieId();
         String searchText = movieQueryRequest.getSearchText();
-        String name = movieQueryRequest.getName();
-        String actors = movieQueryRequest.getActors();
-        List<String> typeList = movieQueryRequest.getType();
         String sortField = movieQueryRequest.getSortField();
         String sortOrder = movieQueryRequest.getSortOrder();
+
+        Long userId = movieQueryRequest.getUserId();
+        Long movieId = movieQueryRequest.getMovieId();
+        String name = movieQueryRequest.getName();
+        String director = movieQueryRequest.getDirector();
+        List<String> actorsList = movieQueryRequest.getActors();
+
 
         // 拼接查询条件
         if (StringUtils.isNotBlank(searchText)) {
             queryWrapper.and(qw -> qw.like("name", searchText).or().like("actors", searchText));
         }
         queryWrapper.like(StringUtils.isNotBlank(name), "name", name);
-        queryWrapper.like(StringUtils.isNotBlank(actors), "content", actors);
+        queryWrapper.like(StringUtils.isNotBlank(director), "content", director);
 
-        if (CollUtil.isNotEmpty(typeList)) {
-            for (String tag : typeList) {
+        if (CollUtil.isNotEmpty(actorsList)) {
+            for (String tag : actorsList) {
                 queryWrapper.like("type", "\"" + tag + "\"");
             }
         }
         queryWrapper.eq(ObjectUtils.isNotEmpty(movieId), "movieId", movieId);
+        queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
+        queryWrapper.eq("isDelete", false);
         queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
                 sortField);
         return queryWrapper;
@@ -106,6 +119,7 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
     public MovieVO getMovieVO(Movie movie, HttpServletRequest request) {
         MovieVO movieVO = MovieVO.objToVo(movie);
         // 1. 关联查询用户信息
+        long movieId = movie.getMovieId();
         Long userId = movie.getUserId();
         User user = null;
         if (userId != null && userId > 0) {
@@ -114,14 +128,22 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
         UserVO userVO = userService.getUserVO(user);
         movieVO.setUser(userVO);
 
-        // 1. 关联查询用户信息
-        Long CommentsId = movie.();
-        User user = null;
-        if (userId != null && userId > 0) {
-            user = userService.getById(userId);
+        // 2. 已登录，获取用户点赞、收藏状态
+        User loginUser = userService.getLoginUserPermitNull(request);
+        if (loginUser != null) {
+            // 获取点赞
+            QueryWrapper<MovieThumb> movieThumbQueryWrapper = new QueryWrapper<>();
+            movieThumbQueryWrapper.in("movieId", movieId);
+            movieThumbQueryWrapper.eq("userId", loginUser.getId());
+            MovieThumb movieThumb = movieThumbMapper.selectOne(movieThumbQueryWrapper);
+            movieVO.setHasThumb(movieThumb != null);
+            // 获取收藏
+            QueryWrapper<MovieFavour> movieFavourQueryWrapper = new QueryWrapper<>();
+            movieFavourQueryWrapper.in("movieId", movieId);
+            movieFavourQueryWrapper.eq("userId", loginUser.getId());
+            MovieFavour movieFavour = movieFavourMapper.selectOne(movieFavourQueryWrapper);
+            movieVO.setHasFavour(movieFavour != null);
         }
-        CommentsVO commentsVO = CommentsService.getcommentsVO(comments);
-        movieVO.setCommentsVO(commentsVO);
         return movieVO;
     }
 
@@ -136,7 +158,26 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
         Set<Long> userIdSet = movieList.stream().map(Movie::getUserId).collect(Collectors.toSet());
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
                 .collect(Collectors.groupingBy(User::getId));
-
+        // 2. 已登录，获取用户点赞、收藏状态
+        Map<Long, Boolean> movieIdHasThumbMap = new HashMap<>();
+        Map<Long, Boolean> movieIdHasFavourMap = new HashMap<>();
+        User loginUser = userService.getLoginUserPermitNull(request);
+        if (loginUser != null) {
+            Set<Long> movieIdSet = movieList.stream().map(Movie::getMovieId).collect(Collectors.toSet());
+            loginUser = userService.getLoginUser(request);
+            // 获取点赞
+            QueryWrapper<MovieThumb> movieThumbQueryWrapper = new QueryWrapper<>();
+            movieThumbQueryWrapper.in("movieId", movieIdSet);
+            movieThumbQueryWrapper.eq("userId", loginUser.getId());
+            List<MovieThumb> movieMovieThumbList = movieThumbMapper.selectList(movieThumbQueryWrapper);
+            movieMovieThumbList.forEach(movieMovieThumb -> movieIdHasThumbMap.put(movieMovieThumb.getMovieId(), true));
+            // 获取收藏
+            QueryWrapper<MovieFavour> movieFavourQueryWrapper = new QueryWrapper<>();
+            movieFavourQueryWrapper.in("movieId", movieIdSet);
+            movieFavourQueryWrapper.eq("userId", loginUser.getId());
+            List<MovieFavour> movieFavourList = movieFavourMapper.selectList(movieFavourQueryWrapper);
+            movieFavourList.forEach(movieFavour -> movieIdHasFavourMap.put(movieFavour.getMovieId(), true));
+        }
         // 填充信息
         List<MovieVO> movieVOList = movieList.stream().map(movie -> {
             MovieVO movieVO = MovieVO.objToVo(movie);
@@ -146,7 +187,8 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
                 user = userIdUserListMap.get(userId).get(0);
             }
             movieVO.setUser(userService.getUserVO(user));
-
+            movieVO.setHasThumb(movieIdHasThumbMap.getOrDefault(movie.getMovieId(), false));
+            movieVO.setHasFavour(movieIdHasFavourMap.getOrDefault(movie.getMovieId(), false));
             return movieVO;
         }).collect(Collectors.toList());
         movieVOPage.setRecords(movieVOList);

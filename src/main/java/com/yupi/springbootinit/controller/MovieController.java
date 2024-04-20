@@ -11,10 +11,12 @@ import com.yupi.springbootinit.exception.ThrowUtils;
 import com.yupi.springbootinit.model.dto.movie.MovieAddRequest;
 import com.yupi.springbootinit.model.dto.movie.MovieQueryRequest;
 import com.yupi.springbootinit.model.dto.movie.MovieUpdateRequest;
+import com.yupi.springbootinit.model.entity.Movie;
 import com.yupi.springbootinit.model.entity.User;
 import com.yupi.springbootinit.model.vo.MovieVO;
 import com.yupi.springbootinit.service.MovieService;
 import com.yupi.springbootinit.service.UserService;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +45,6 @@ public class MovieController {
 
     /**
      * 创建
-     *
      * @param movieAddRequest
      * @param request
      * @return
@@ -57,14 +58,15 @@ public class MovieController {
         }
         Movie movie = new Movie();
         BeanUtils.copyProperties(movieAddRequest, movie);
-        List<String> type = movieAddRequest.getType();
-        if (type != null) {
-            movie.setType(JSONUtil.toJsonStr(type));
+        List<String> actors = movieAddRequest.getActors();
+        if (actors != null) {
+            movie.setActors(JSONUtil.toJsonStr(actors));
         }
         movieService.validMovie(movie, true);
         User loginUser = userService.getLoginUser(request);
         movie.setUserId(loginUser.getId());
-
+        movie.setFavourNum(0);
+        movie.setThumbNum(0);
         boolean result = movieService.save(movie);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         long newMovieId = movie.getMovieId();
@@ -73,7 +75,6 @@ public class MovieController {
 
     /**
      * 删除
-     *
      * @param deleteRequest
      * @param request
      * @return
@@ -99,7 +100,6 @@ public class MovieController {
 
     /**
      * 更新（仅管理员）
-     *
      * @param movieUpdateRequest
      * @return
      */
@@ -111,9 +111,9 @@ public class MovieController {
         }
         Movie movie = new Movie();
         BeanUtils.copyProperties(movieUpdateRequest, movie);
-        List<String> type = movieUpdateRequest.getType();
-        if (type != null) {
-            movie.setType(JSONUtil.toJsonStr(type));
+        List<String> actors = movieUpdateRequest.getActors();
+        if (actors != null) {
+            movie.setType(JSONUtil.toJsonStr(actors));
         }
         // 参数校验
         movieService.validMovie(movie, false);
@@ -145,7 +145,6 @@ public class MovieController {
 
     /**
      * 分页获取列表（仅管理员）
-     *
      * @param movieQueryRequest
      * @return
      */
@@ -160,7 +159,6 @@ public class MovieController {
 
     /**
      * 分页获取列表（封装类）
-     *
      * @param movieQueryRequest
      * @param request
      * @return
@@ -177,5 +175,32 @@ public class MovieController {
         return ResultUtils.success(movieService.getMovieVOPage(moviePage, request));
     }
 
-
+    /**
+     * 分页获取当前用户创建的资源列表
+     *
+     * @param movieQueryRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/my/list/page/vo")
+    public BaseResponse<Page<MovieVO>> listMyMovieVOByPage(@RequestBody MovieQueryRequest movieQueryRequest,
+                                                                 HttpServletRequest request) {
+        log.info("分页获取当前用户创建的资源列表:", movieQueryRequest);
+        //判断前端请求
+        if (movieQueryRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //获取登录状态
+        User loginUser = userService.getLoginUser(request);
+        movieQueryRequest.setUserId(loginUser.getId());
+        //判断当前页码和页面大小
+        long current = movieQueryRequest.getCurrent();
+        long size = movieQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        //分页查询
+        Page<Movie> moviePage = movieService.page(new Page<>(current, size),
+                movieService.getQueryWrapper(movieQueryRequest));
+        return ResultUtils.success(movieService.getMovieVOPage(moviePage, request));
+    }
 }

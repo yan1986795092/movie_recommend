@@ -1,22 +1,21 @@
-package com.yupi.springbootinit.model.dto.post;
+package com.yupi.springbootinit.model.dto.moviefavour;
 
 import java.io.Serializable;
-import java.util.List;
+
 import lombok.Data;
 
 /**
- * 更新请求
+ * 帖子收藏 / 取消收藏请求
  */
 @Data
-public class PostUpdateRequest implements Serializable {
-
+public class MovieFavourAddRequest implements Serializable {
     /**
      * id
      */
     private Long id;
 
     /**
-     * 电影id
+     * 电影 id
      */
     private Long movieId;
 
@@ -24,11 +23,6 @@ public class PostUpdateRequest implements Serializable {
      * 创建用户 id
      */
     private Long userId;
-
-    /**
-     * 内容
-     */
-    private String content;
 
     private static final long serialVersionUID = 1L;
 }

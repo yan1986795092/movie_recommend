@@ -32,4 +32,9 @@
         tags,movieUrl,local,
         createTime,updateTime
     </sql>
+    <select id="listMovieWithDelete" resultType="com.yupi.springbootinit.model.entity.Movie">
+        select *
+        from movie
+        where updateTime >= #{minUpdateTime}
+    </select>
 </mapper>

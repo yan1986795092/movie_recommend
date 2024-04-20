@@ -2,12 +2,12 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.yupi.springbootinit.mapper.PostFavourMapper">
+<mapper namespace="com.yupi.springbootinit.mapper.MovieFavourMapper">
 
-    <resultMap id="BaseResultMap" type="com.yupi.springbootinit.model.entity.PostFavour">
+    <resultMap id="BaseResultMap" type="com.yupi.springbootinit.model.entity.MovieFavour">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="movieId" column="movieId" jdbcType="BIGINT"/>
-            <result property="userid" column="userId" jdbcType="BIGINT"/>
+            <result property="userId" column="userId" jdbcType="BIGINT"/>
             <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
@@ -16,4 +16,5 @@
         id,movieId,userId,
         createTime,updateTime
     </sql>
+    <select id="listFavourMovieByPage" resultType="com.yupi.springbootinit.model.entity.Movie"></select>
 </mapper>

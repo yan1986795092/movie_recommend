@@ -1,14 +1,14 @@
-package com.yupi.springbootinit.model.dto.post;
+package com.yupi.springbootinit.model.dto.moviethumb;
 
 import java.io.Serializable;
-import java.util.List;
+
 import lombok.Data;
 
 /**
- * 更新请求
+ * 帖子点赞请求
  */
 @Data
-public class PostUpdateRequest implements Serializable {
+public class MovieThumbAddRequest implements Serializable {
 
     /**
      * id
@@ -16,19 +16,14 @@ public class PostUpdateRequest implements Serializable {
     private Long id;
 
     /**
-     * 电影id
+     * 电影 id
      */
     private Long movieId;
 
     /**
      * 创建用户 id
      */
-    private Long userId;
-
-    /**
-     * 内容
-     */
-    private String content;
+    private Long userid;
 
     private static final long serialVersionUID = 1L;
 }

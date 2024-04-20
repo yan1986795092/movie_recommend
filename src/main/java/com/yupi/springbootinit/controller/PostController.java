@@ -14,6 +14,7 @@ import com.yupi.springbootinit.model.dto.post.PostAddRequest;
 import com.yupi.springbootinit.model.dto.post.PostEditRequest;
 import com.yupi.springbootinit.model.dto.post.PostQueryRequest;
 import com.yupi.springbootinit.model.dto.post.PostUpdateRequest;
+import com.yupi.springbootinit.model.entity.Post;
 import com.yupi.springbootinit.model.entity.User;
 import com.yupi.springbootinit.model.vo.PostVO;
 import com.yupi.springbootinit.service.PostService;
@@ -60,15 +61,11 @@ public class PostController {
         }
         Post post = new Post();
         BeanUtils.copyProperties(postAddRequest, post);
-        List<String> tags = postAddRequest.getTags();
-        if (tags != null) {
-            post.setTags(JSONUtil.toJsonStr(tags));
-        }
+
         postService.validPost(post, true);
         User loginUser = userService.getLoginUser(request);
         post.setUserId(loginUser.getId());
-        post.setFavourNum(0);
-        post.setThumbNum(0);
+
         boolean result = postService.save(post);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         long newPostId = post.getId();
@@ -109,15 +106,12 @@ public class PostController {
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updatePost(@RequestBody PostUpdateRequest postUpdateRequest) {
+
         if (postUpdateRequest == null || postUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Post post = new Post();
         BeanUtils.copyProperties(postUpdateRequest, post);
-        List<String> tags = postUpdateRequest.getTags();
-        if (tags != null) {
-            post.setTags(JSONUtil.toJsonStr(tags));
-        }
         // 参数校验
         postService.validPost(post, false);
         long id = postUpdateRequest.getId();
@@ -205,24 +199,7 @@ public class PostController {
         return ResultUtils.success(postService.getPostVOPage(postPage, request));
     }
 
-    // endregion
 
-    /**
-     * 分页搜索（从 ES 查询，封装类）
-     *
-     * @param postQueryRequest
-     * @param request
-     * @return
-     */
-    @PostMapping("/search/page/vo")
-    public BaseResponse<Page<PostVO>> searchPostVOByPage(@RequestBody PostQueryRequest postQueryRequest,
-            HttpServletRequest request) {
-        long size = postQueryRequest.getPageSize();
-        // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        Page<Post> postPage = postService.searchFromEs(postQueryRequest);
-        return ResultUtils.success(postService.getPostVOPage(postPage, request));
-    }
 
     /**
      * 编辑（用户）
@@ -238,10 +215,6 @@ public class PostController {
         }
         Post post = new Post();
         BeanUtils.copyProperties(postEditRequest, post);
-        List<String> tags = postEditRequest.getTags();
-        if (tags != null) {
-            post.setTags(JSONUtil.toJsonStr(tags));
-        }
         // 参数校验
         postService.validPost(post, false);
         User loginUser = userService.getLoginUser(request);

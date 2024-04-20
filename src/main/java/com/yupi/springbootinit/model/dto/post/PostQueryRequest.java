@@ -28,12 +28,16 @@ public class  PostQueryRequest extends PageRequest implements Serializable {
     /**
      * 创建用户 id
      */
-    private Long userid;
+    private Long userId;
 
     /**
      * 内容
      */
     private String content;
 
+    /**
+     * 搜索词
+     */
+    private String searchText;
     private static final long serialVersionUID = 1L;
 }
