@@ -4,6 +4,7 @@ package com.yupi.springbootinit.model.dto.movie;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @Author yqq
@@ -36,7 +37,7 @@ public class MovieAddRequest implements Serializable {
     /**
      * 主演
      */
-    private String actors;
+    private List<String> actors;
 
     /**
      * 类型

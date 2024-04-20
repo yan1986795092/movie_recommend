@@ -26,7 +26,7 @@ public class PostEditRequest implements Serializable {
     /**
      * 创建用户 id
      */
-    private Long userid;
+    private Long userId;
 
     /**
      * 内容

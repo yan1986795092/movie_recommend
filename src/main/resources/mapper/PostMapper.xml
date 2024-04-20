@@ -7,7 +7,7 @@
     <resultMap id="BaseResultMap" type="com.yupi.springbootinit.model.entity.Post">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="movieId" column="movieId" jdbcType="BIGINT"/>
-            <result property="userid" column="userId" jdbcType="BIGINT"/>
+            <result property="userId" column="userId" jdbcType="BIGINT"/>
             <result property="content" column="content" jdbcType="VARCHAR"/>
             <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
@@ -19,4 +19,9 @@
         content,createTime,updateTime,
         isDelete
     </sql>
+    <select id="listPostWithDelete" resultType="com.yupi.springbootinit.model.entity.Post">
+        select *
+        from post
+        where updateTime >= #{minUpdateTime}
+    </select>
 </mapper>

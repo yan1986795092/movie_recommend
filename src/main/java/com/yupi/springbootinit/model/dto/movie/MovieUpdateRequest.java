@@ -39,7 +39,7 @@ public class MovieUpdateRequest implements Serializable {
     /**
      * 主演
      */
-    private String actors;
+    private List<String> actors;
 
     /**
      * 类型

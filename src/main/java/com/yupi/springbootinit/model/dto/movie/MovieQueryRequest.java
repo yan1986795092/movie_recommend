@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.List;
 
 
 /**
@@ -40,7 +41,7 @@ public class MovieQueryRequest extends PageRequest implements Serializable {
     /**
      * 主演
      */
-    private String actors;
+    private List<String> actors;
 
     /**
      * 类型
@@ -51,7 +52,6 @@ public class MovieQueryRequest extends PageRequest implements Serializable {
      * 制片国家/地区
      */
     private String country;
-
 
     /**
      * 片长

@@ -3,6 +3,7 @@ package com.yupi.springbootinit;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.yupi.springbootinit.config.WxOpenConfig;
+import com.yupi.springbootinit.model.entity.Movie;
 import com.yupi.springbootinit.service.MovieService;
 import com.yupi.springbootinit.utils.HttpUtils;
 import org.jsoup.Jsoup;
@@ -20,9 +21,6 @@ import java.util.Map;
 
 /**
  * 主类测试
- *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @SpringBootTest
 class MainApplicationTests {
