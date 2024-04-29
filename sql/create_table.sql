@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `user`
 ) COMMENT '用户' COLLATE = utf8mb4_unicode_ci;
 
 
--- 爬虫建表
+-- 电影表
 CREATE TABLE IF NOT EXISTS `movie`
 (
     `movieId`     BIGINT AUTO_INCREMENT COMMENT '电影id' PRIMARY KEY,
@@ -44,7 +44,31 @@ CREATE TABLE IF NOT EXISTS `movie`
     `movieUrl`    TEXT                                                           NULL COMMENT '电影地址',
     `local`       TEXT                                                           NULL COMMENT '照片本地地址',
     `createTime`  DATETIME DEFAULT CURRENT_TIMESTAMP                             NOT NULL COMMENT '创建时间',
-    `updateTime`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL COMMENT '更新时间'
+    `updateTime`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL COMMENT '更新时间',
+    `isDelete`    TINYINT  DEFAULT 0                                             NOT NULL COMMENT '是否删除'
+) DEFAULT CHARSET = utf8 COMMENT ='电影表';
+
+-- 推荐电影表
+CREATE TABLE IF NOT EXISTS `movie_recommend`
+(
+    `movieId`     BIGINT AUTO_INCREMENT COMMENT '电影id' PRIMARY KEY,
+    `userID`      BIGINT                                                         Null comment '创建用户id',
+    `name`        TEXT                                                           NOT NULL COMMENT '电影名',
+    `director`    TEXT                                                           NULL COMMENT '导演',
+    `actors`      TEXT                                                           NULL COMMENT '主演',
+    `type`        TEXT                                                           NULL COMMENT '类型',
+    `country`     TEXT                                                           NULL COMMENT '制片国家/地区',
+    `releaseDate` TEXT                                                           NULL COMMENT '上映日期',
+    `runtime`     TEXT                                                           NULL COMMENT '片长',
+    `ratingNum`   TEXT                                                           NULL COMMENT '豆瓣评分',
+    `thumbNum`    int      default 0                                             NULL comment '点赞数',
+    `favourNum`   int      default 0                                             NULL comment '收藏数',
+    `tags`        TEXT                                                           NULL COMMENT '电影简介',
+    `movieUrl`    TEXT                                                           NULL COMMENT '电影地址',
+    `local`       TEXT                                                           NULL COMMENT '照片本地地址',
+    `createTime`  DATETIME DEFAULT CURRENT_TIMESTAMP                             NOT NULL COMMENT '创建时间',
+    `updateTime`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL COMMENT '更新时间',
+    `isDelete`    TINYINT  DEFAULT 0                                             NOT NULL COMMENT '是否删除'
 ) DEFAULT CHARSET = utf8 COMMENT ='电影表';
 
 -- 评论表
@@ -84,3 +108,21 @@ create table if not exists post_favour
     index idx_postId (movieId),
     index idx_userId (userId)
 ) comment '电影收藏';
+
+-- 图表表
+create table if not exists chart
+(
+    id           bigint auto_increment comment 'id' primary key,
+    goal				 text  null comment '分析目标',
+    `name`               varchar(128) null comment '图表名称',
+    chartData    text  null comment '图表数据',
+    chartType	   varchar(128) null comment '图表类型',
+    genChart		 text	 null comment '生成的图表数据',
+    genResult		 text	 null comment '生成的分析结论',
+    status       varchar(128) not null default 'wait' comment 'wait,running,succeed,failed',
+    execMessage  text   null comment '执行信息',
+    userId       bigint null comment '创建用户 id',
+    createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete     tinyint      default 0                 not null comment '是否删除'
+) comment '图表信息表' collate = utf8mb4_unicode_ci;

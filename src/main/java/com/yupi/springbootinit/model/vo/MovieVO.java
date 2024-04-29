@@ -112,7 +112,7 @@ public class MovieVO {
         Movie movie = new Movie();
         BeanUtils.copyProperties(movieVO, movie);
         List<String> actorsList = movieVO.getActors();
-        movie.setTags(JSONUtil.toJsonStr(actorsList));
+        movie.setActors(JSONUtil.toJsonStr(actorsList));
         return movie;
     }
 
@@ -128,7 +128,6 @@ public class MovieVO {
         }
         MovieVO movieVO = new MovieVO();
         BeanUtils.copyProperties(movie, movieVO);
-        movieVO.setActors(JSONUtil.toList(movie.getActors(), String.class));
         return movieVO;
     }
 }
