@@ -1,16 +1,14 @@
-package com.yupi.springbootinit.movie;
+package com.yupi.springbootinit.utils;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.yupi.springbootinit.model.entity.Movie;
 import com.yupi.springbootinit.service.MovieService;
-import com.yupi.springbootinit.utils.HttpUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.IOException;
@@ -18,15 +16,16 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-
-@SpringBootTest
-class CrawlerDoubanApplicationTests {
-
+/**
+ * @Author yqq
+ * @Date 2024/4/20 21:09
+ * @Description
+ * @Version 1.0
+ */
+@Component
+public class Spider {
     @Resource
     private MovieService movieService;
-
-
-    @Test
     public void contextLoads() throws URISyntaxException, IOException {
         //请求地址
         //https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&page_limit=50&page_start=0
@@ -44,7 +43,7 @@ class CrawlerDoubanApplicationTests {
         mapTitle.put("Cookie", "bid=G1pcWQrJpYg; _pk_id.100001.4cf6=727f200318a7859e.1713174963.; __yadk_uid=OZyjR4dJSlBcTkJyLwjtBfhFbnasLStc; _vwo_uuid_v2=DBACDD4555EAAF89D5561DC48CE17CBDB|4d584d2dd850a199d43955daab29cf33; __utma=30149280.2064442863.1713174964.1713423666.1713506676.4; __utmc=30149280; __utmz=30149280.1713506676.4.3.utmcsr=cn.bing.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmb=30149280.1.10.1713506676; _pk_ref.100001.4cf6=%5B%22%22%2C%22%22%2C1713506679%2C%22https%3A%2F%2Fwww.douban.com%2F%22%5D; _pk_ses.100001.4cf6=1; __utma=223695111.1797087261.1713174964.1713423666.1713506679.4; __utmb=223695111.0.10.1713506679; __utmc=223695111; __utmz=223695111.1713506679.4.3.utmcsr=douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/; ap_v=0,6.0; __gads=ID=6e2348f87d357532:T=1713174964:RT=1713507496:S=ALNI_MZ271olrTvBjde2gyzWT9Hyd91SHg; __gpi=UID=00000ded6a185a71:T=1713174964:RT=1713507496:S=ALNI_MaBjeBeJSJxFYYFsvryVZlzaGaEjg; __eoi=ID=899ce58d0423512e:T=1713174964:RT=1713507496:S=AA-AfjbkbExeTBHcx1prfLxeYfRz");
         //获取前100条数据，可以自行更改
 
-        for (int i = 0; i < 20; i += 10) {
+        for (int i = 0; i < 100; i += 10) {
             map.put("page_start", i + "");
             String html = HttpUtils.doGetHtml(url, map, mapTitle);
             JSONObject jsonObject = JSONObject.parseObject(html);
@@ -67,33 +66,73 @@ class CrawlerDoubanApplicationTests {
                 Document doc = Jsoup.parse(html2);
                 //获取导演名称
                 Element element = doc.select("div#info a[rel=v:directedBy]").first();
-                movie.setDirector(element.text());
+                if (element != null) {
+                    movie.setDirector(element.text());
+                } else {
+                    // 处理元素为空的情况
+                    movie.setDirector(null);
+                }
+                //获取主演
                 Elements elements = doc.select("div#info a[rel=v:starring]");
-                //主演
-                String Actors = "";
-                for (Element e : elements) {
-                      Actors += e.text() + "，";
+                if (element != null) {
+                    String Actors = "";
+                    for (Element e : elements) {
+                        Actors += e.text() + "，";
+                    }
+                    if (!Actors.equals("")) {
+                        Actors = Actors.substring(0, Actors.length() - 1);
+                    }
+                    movie.setActors(Actors);
+                } else {
+                    // 处理元素为空的情况
+                    movie.setActors(null);
                 }
-                if (!Actors.equals("")) {
-                    Actors = Actors.substring(0, Actors.length() - 1);
-                }
-                 movie.setActors(Actors);
+
                 //获取电影时长
                 element = doc.select("div#info span[property=v:runtime]").first();
-                movie.setRuntime(element.text());
+                if (element != null) {
+                    movie.setRuntime(element.text());
+                } else {
+                    // 处理元素为空的情况
+                    movie.setRuntime(null);
+                }
+
                 //获取国家
-                element = doc.select("div#info [property=v:initialReleaseDate]").first();
-                movie.setCountry(element.text());
+                element = doc.select("div#info span.pl:contains(制片国家/地区)").first();
+                if (element != null) {
+                    movie.setCountry(element.text());
+                } else {
+                    // 处理元素为空的情况
+                    movie.setCountry(null);
+                }
+
+                //获取上映时间
+                element = doc.select("div#link-report-intra [property=v:summary]").first();
+                if (element != null) {
+                    movie.setReleaseDate(element.text());
+                } else {
+                    // 处理元素为空的情况
+                    movie.setReleaseDate(null);
+                }
                 //获取类型
                 element = doc.select("div#info [property=v:genre]").first();
-                movie.setType(element.text());
+                if (element != null) {
+                    movie.setType(element.text());
+                } else {
+                    // 处理元素为空的情况
+                    movie.setType(null);
+                }
                 //获取简介
                 element = doc.select("div#link-report-intra [property=v:summary]").first();
-                movie.setTags(element.text());
+                if (element != null) {
+                    movie.setTags(element.text());
+                } else {
+                    // 处理元素为空的情况
+                    movie.setTags(null);
+                }
                 movieService.save(movie);
             }
         }
         System.out.println("数据获取完成。。。");
     }
-
 }

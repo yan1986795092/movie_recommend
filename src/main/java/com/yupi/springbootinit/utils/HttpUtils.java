@@ -33,9 +33,9 @@ public class HttpUtils {
     //配置请求信息
     private static RequestConfig getConfig() {
         RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(50000)      //创建连接的最长时间，单位毫秒
-                .setConnectionRequestTimeout(50000)  //设置获取链接的最长时间，单位毫秒
-                .setSocketTimeout(50000)     //设置数据传输的最长时间，单位毫秒
+                .setConnectTimeout(500000)      //创建连接的最长时间，单位毫秒
+                .setConnectionRequestTimeout(500000)  //设置获取链接的最长时间，单位毫秒
+                .setSocketTimeout(500000)     //设置数据传输的最长时间，单位毫秒
                 .build();
         return config;
     }
@@ -105,14 +105,14 @@ public class HttpUtils {
     }
 
 
-
-
     /**
      * 下载图片
+     *
      * @param url
      * @return 图片名称
      */
     public static String doGetImage(String url) throws IOException {
+        //  String picName = null;
         //获取HTTPClient对象
         CloseableHttpClient httpClient = HttpClients.createDefault();
         //设置HTTPGet请求对象，设置url地址
@@ -135,7 +135,7 @@ public class HttpUtils {
                     String picName = UUID.randomUUID().toString() + extName;
                     //下载图片
                     //声明OutputStream
-                    OutputStream outputStream = new FileOutputStream(new File("E://imges/" + picName));
+                    OutputStream outputStream = new FileOutputStream(new File("C://Users//86178//Desktop//yupi-antd-frontend-init-master//public//movie" + picName));
                     response.getEntity().writeTo(outputStream);
                     //返回图片名称
                     return picName;
