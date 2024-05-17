@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkyupi_antd_frontend_init=self.webpackChunkyupi_antd_frontend_init||[]).push([[105],{3121:function(o,t,n){n.r(t);var s=n(67294),_=n(20040),u=n(27484),E=n.n(u),a=n(85893),d=function(){return(0,a.jsx)(_.vY,{children:(0,a.jsx)(_.vY.Item,{label:"\u65E5\u671F",fieldProps:{format:"YYYY.MM.DD"},valueType:"date",children:E()().valueOf()})})};t.default=d}}]);
