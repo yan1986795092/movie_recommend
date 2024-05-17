@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.yupi.springbootinit.mapper.MovieMapper">
+<mapper namespace="com.movie_recommend.mapper.MovieMapper">
 
-    <resultMap id="BaseResultMap" type="com.yupi.springbootinit.model.entity.Movie">
+    <resultMap id="BaseResultMap" type="com.movie_recommend.model.entity.Movie">
             <id property="movieId" column="movieId" jdbcType="BIGINT"/>
             <result property="userId" column="userID" jdbcType="BIGINT"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
@@ -32,7 +32,7 @@
         tags,movieUrl,local,
         createTime,updateTime
     </sql>
-    <select id="listMovieWithDelete" resultType="com.yupi.springbootinit.model.entity.Movie">
+    <select id="listMovieWithDelete" resultType="com.movie_recommend.model.entity.Movie">
         select *
         from movie
         where updateTime >= #{minUpdateTime}

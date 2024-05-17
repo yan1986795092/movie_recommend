@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.yupi.springbootinit.mapper.MovieThumbMapper">
+<mapper namespace="com.movie_recommend.mapper.MovieThumbMapper">
 
-    <resultMap id="BaseResultMap" type="com.yupi.springbootinit.model.entity.MovieThumb">
+    <resultMap id="BaseResultMap" type="com.movie_recommend.model.entity.MovieThumb">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="movieId" column="movieId" jdbcType="BIGINT"/>
             <result property="userId" column="userId" jdbcType="BIGINT"/>
