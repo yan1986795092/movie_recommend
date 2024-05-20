@@ -86,6 +86,19 @@ create table if not exists post_favour
     index idx_userId (userId)
 ) comment '电影收藏';
 
+-- 评分表（硬删除）
+create table if not exists movie_score
+(
+    id         bigint auto_increment comment 'id' primary key,
+    movieId    bigint                             null comment '电影 id',
+    userId     bigint                             null comment '创建用户 id',
+    rating     TEXT                               NULL COMMENT '评分',
+    createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    index idx_postId (movieId),
+    index idx_userId (userId)
+) comment '电影评分表';
+
 
 -- 电影评分（硬删除）
 create table if not exists movie_score
@@ -93,7 +106,7 @@ create table if not exists movie_score
     id         bigint auto_increment comment 'id' primary key,
     movieId    bigint                             null comment '电影 id',
     userId     bigint                             null comment '创建用户 id',
-    score      int      default 0                                             NULL comment '评分',
+    score      int      default 0                 NULL comment '评分',
     createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     index idx_postId (movieId),

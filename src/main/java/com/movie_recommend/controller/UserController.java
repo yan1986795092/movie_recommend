@@ -144,9 +144,10 @@ public class UserController {
      * @return
      */
     @GetMapping("/get/login")
-    public BaseResponse<LoginUserVO> getLoginUser(HttpServletRequest request) {
+    public BaseResponse<User> getLoginUser(HttpServletRequest request) {
         User user = userService.getLoginUser(request);
-        return ResultUtils.success(userService.getLoginUserVO(user));
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
+        return ResultUtils.success(user);
     }
 
     // endregion
@@ -224,7 +225,7 @@ public class UserController {
      */
     @GetMapping("/get")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<User> getUserById(long id, HttpServletRequest request) {
+    public BaseResponse<User> getUserById(Long id, HttpServletRequest request) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -301,16 +302,55 @@ public class UserController {
      */
     @PostMapping("/update/my")
     public BaseResponse<Boolean> updateMyUser(@RequestBody UserUpdateMyRequest userUpdateMyRequest,
-            HttpServletRequest request) {
+                                              HttpServletRequest request) {
         if (userUpdateMyRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
+        // 获取当前登录的用户
         User loginUser = userService.getLoginUser(request);
+
+        // 将请求体中的属性复制到新的 User 对象中
         User user = new User();
         BeanUtils.copyProperties(userUpdateMyRequest, user);
+
+        String oldUserAvatar = loginUser.getUserAvatar();
+        System.out.println("用户上传的头像：" + userUpdateMyRequest.getUserAvatar());
+        System.out.println("用户以前的头像：" + oldUserAvatar);
+
+        // 判断用户是否上传了头像，如果没有上传则使用原来的头像
+        if (userUpdateMyRequest.getUserAvatar() == null || userUpdateMyRequest.getUserAvatar().isEmpty()) {
+            user.setUserAvatar(oldUserAvatar);
+        }
+
+        // 对用户输入的原密码进行加密
+        String oldUserPassword = userUpdateMyRequest.getOldUserPassword();
+        String encryptedOldPassword = DigestUtils.md5DigestAsHex((UserServiceImpl.SALT + oldUserPassword).getBytes());
+
+        // 打印密码信息用于调试
+        System.out.println("数据库中的密码：" + loginUser.getUserPassword());
+        System.out.println("用户输入的原密码加密后：" + encryptedOldPassword);
+
+        // 验证输入的旧密码是否正确
+        if (!loginUser.getUserPassword().equals(encryptedOldPassword)) {
+            throw new BusinessException(ErrorCode.PASSWORD_ERROR);
+        }
+
+        // 对新密码进行加密
+        String newUserPassword = userUpdateMyRequest.getNewUserPassword();
+        String encryptedNewPassword = DigestUtils.md5DigestAsHex((UserServiceImpl.SALT + newUserPassword).getBytes());
+
+        // 打印新密码信息用于调试
+        System.out.println("用户输入的新密码加密后：" + encryptedNewPassword);
+
+        // 更新用户对象中的新密码
+        user.setUserPassword(encryptedNewPassword);
         user.setId(loginUser.getId());
+
+        // 更新用户信息
         boolean result = userService.updateById(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
         return ResultUtils.success(true);
     }
 }

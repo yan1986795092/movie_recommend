@@ -3,15 +3,13 @@ package com.movie_recommend.controller;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.movie_recommend.constant.UserConstant;
-import com.movie_recommend.exception.BusinessException;
-import com.movie_recommend.model.vo.MovieVO;
-import com.movie_recommend.service.UserService;
 import com.movie_recommend.annotation.AuthCheck;
 import com.movie_recommend.common.BaseResponse;
 import com.movie_recommend.common.DeleteRequest;
 import com.movie_recommend.common.ErrorCode;
 import com.movie_recommend.common.ResultUtils;
+import com.movie_recommend.constant.UserConstant;
+import com.movie_recommend.exception.BusinessException;
 import com.movie_recommend.exception.ThrowUtils;
 import com.movie_recommend.model.dto.movie.MovieAddRequest;
 import com.movie_recommend.model.dto.movie.MovieQueryRequest;
@@ -19,7 +17,9 @@ import com.movie_recommend.model.dto.movie.MovieUpdateRequest;
 import com.movie_recommend.model.dto.spider.SpiderRequest;
 import com.movie_recommend.model.entity.Movie;
 import com.movie_recommend.model.entity.User;
+import com.movie_recommend.model.vo.MovieVO;
 import com.movie_recommend.service.MovieService;
+import com.movie_recommend.service.UserService;
 import com.movie_recommend.utils.HttpUtils;
 import com.movie_recommend.utils.Spider;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.movie_recommend.utils.HttpUtils.doGetImage;
@@ -55,7 +56,47 @@ public class MovieController {
     @Resource
     private UserService userService;
 
+    @GetMapping("/recommendationsByUser")
+    public BaseResponse<List> getRecommendationsByUser(HttpServletRequest request) {
 
+        User loginUser = userService.getLoginUser(request);
+        boolean hasUserData = movieService.userHasData(loginUser.getId());
+
+        if(!hasUserData){
+            Movie topRatedMovie = movieService.getTopRatedMovie();  // 获取单部评分最高的电影
+            return ResultUtils.success(movieService.recommendMovies(topRatedMovie));
+        }
+        else{
+            return ResultUtils.success(movieService.recommendMoviesUser(loginUser.getId()));
+        }
+    }
+
+    /**
+     * 基于内容的推荐算法
+     * @param id
+     * @param request
+     * @return
+     */
+    @GetMapping("/recommendations")
+    public BaseResponse<List> getRecommendations(Long id, HttpServletRequest request) {
+        if (id <= 0 || id == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Movie movie = movieService.getById(id);
+        if (movie == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        return ResultUtils.success(movieService.recommendMovies(movie));
+    }
+
+    /**
+     * 爬虫获取电影数据
+     * @param spiderRequest
+     * @param request
+     * @return
+     * @throws URISyntaxException
+     * @throws IOException
+     */
     @PostMapping("/spider")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> runSpider(@RequestBody SpiderRequest spiderRequest, HttpServletRequest request) throws URISyntaxException, IOException {

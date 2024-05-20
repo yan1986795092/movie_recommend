@@ -4,33 +4,29 @@ import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hankcs.hanlp.HanLP;
 import com.movie_recommend.common.ErrorCode;
 import com.movie_recommend.constant.CommonConstant;
 import com.movie_recommend.exception.BusinessException;
+import com.movie_recommend.exception.ThrowUtils;
 import com.movie_recommend.mapper.MovieFavourMapper;
 import com.movie_recommend.mapper.MovieMapper;
+import com.movie_recommend.mapper.MovieScoreMapper;
 import com.movie_recommend.mapper.MovieThumbMapper;
-import com.movie_recommend.model.entity.Movie;
-import com.movie_recommend.model.entity.MovieFavour;
-import com.movie_recommend.model.entity.MovieThumb;
-import com.movie_recommend.model.entity.User;
+import com.movie_recommend.model.dto.movie.MovieQueryRequest;
+import com.movie_recommend.model.entity.*;
 import com.movie_recommend.model.vo.MovieVO;
 import com.movie_recommend.model.vo.UserVO;
+import com.movie_recommend.service.MovieService;
 import com.movie_recommend.service.UserService;
 import com.movie_recommend.utils.SqlUtils;
-import com.movie_recommend.exception.ThrowUtils;
-import com.movie_recommend.model.dto.movie.MovieQueryRequest;
-import com.movie_recommend.service.MovieService;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -47,10 +43,13 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
     private UserService userService;
 
     @Resource
+    private MovieMapper movieMapper;
+    @Resource
     private MovieThumbMapper movieThumbMapper;
-
     @Resource
     private MovieFavourMapper movieFavourMapper;
+    @Resource
+    private MovieScoreMapper movieScoreMapper;
 
     @Override
     public void validMovie(Movie movie, boolean add) {
@@ -113,7 +112,6 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
                 sortField);
         return queryWrapper;
     }
-
 
     @Override
     public MovieVO getMovieVO(Movie movie, HttpServletRequest request) {
@@ -196,4 +194,270 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
         return movieVOPage;
     }
 
+    /**
+     * 获取评分最高的电影
+     * @return
+     */
+    @Override
+    public Movie getTopRatedMovie() {
+        // 查询评分最高的一部电影
+        return movieMapper.selectOne(new QueryWrapper<Movie>().orderByDesc("ratingNum").last("LIMIT 1"));
+    }
+
+    /**
+     * 判断是否有数据
+     * @param userId
+     * @return
+     */
+    @Override
+    public boolean userHasData(Long userId) {
+        boolean hasRatings = movieScoreMapper.selectCount(new QueryWrapper<MovieScore>().eq("userId", userId)) > 0;
+        boolean hasFavourites = movieFavourMapper.selectCount(new QueryWrapper<MovieFavour>().eq("userId", userId)) > 0;
+        return hasRatings || hasFavourites;
+    }
+    /**
+     * 基于内容的推荐算法
+     *
+     * @param targetMovie
+     * @return
+     */
+    @Override
+    public List<Movie> recommendMovies(Movie targetMovie) {
+        // 1. 从数据库中检索所有电影
+        List<Movie> allMovies = movieMapper.selectList(null);
+
+        if (allMovies == null || allMovies.isEmpty()) {
+            System.out.println("No movies found in the database.");
+            return Collections.emptyList();
+        }
+
+        // 2. 计算所有电影与目标电影的相似度，并存储为列表
+        List<MovieSimilarity> sortedMovies = allMovies.stream()
+                // 3. 过滤掉目标电影
+                .filter(m -> m != null && !m.getMovieId().equals(targetMovie.getMovieId()))
+                // 4. 计算相似度
+                .map(m -> new MovieSimilarity(m, calculateCosineSimilarity(targetMovie, m)))
+                // 5. 根据相似度进行排序
+                .sorted((m1, m2) -> Double.compare(m2.similarity, m1.similarity))
+                // 6. 限制结果为前12部
+                .limit(12)
+                // 7. 收集到列表中
+                .collect(Collectors.toList());
+        System.out.println("Target Movie: " + targetMovie.getName());
+        // 8. 输出推荐的电影名称和相似度
+        System.out.println("Recommended Movies:");
+        sortedMovies.forEach(ms -> System.out.println(ms.movie.getName() + " - Similarity: " + ms.movie.getType() + " - Similarity: " + ms.similarity));
+
+        // 9. 返回电影列表
+        return sortedMovies.stream().map(ms -> ms.movie).collect(Collectors.toList());
+
+    }
+
+    /**
+     * 基于用户的协同过滤算法
+     *
+     * @param userId 目标用户的ID
+     * @return 推荐的电影列表
+     */
+    @Override
+    public List<Movie> recommendMoviesUser(Long userId) {
+        // 获取所有用户的电影评分数据
+        List<MovieScore> allRatings = movieScoreMapper.selectList(null);
+        // 将评分数据按用户ID分组，便于后续按用户检索评分
+        Map<Long, List<MovieScore>> userRatingsMap = allRatings.stream()
+                .collect(Collectors.groupingBy(MovieScore::getUserId));
+
+        // 获取所有用户的电影收藏列表
+        List<MovieFavour> allFavorites = movieFavourMapper.selectList(null);
+        // 提取当前用户收藏的电影ID集合
+        Set<Long> favoriteMovieIds = allFavorites.stream()
+                .filter(favorite -> favorite.getUserId().equals(userId))
+                .map(MovieFavour::getMovieId)
+                .collect(Collectors.toSet());
+
+        // 存储其他用户与当前用户的评分相似度
+        Map<Long, Double> similarityScores = new HashMap<>();
+        // 获取目标用户的评分列表
+        List<MovieScore> targetUserRatings = userRatingsMap.get(userId);
+        // 遍历每个用户的评分数据，计算与目标用户的相似度
+        userRatingsMap.forEach((otherUserId, otherRatings) -> {
+            if (!otherUserId.equals(userId)) {
+                double similarity = calculatePearsonCorrelation(targetUserRatings, otherRatings);
+                similarityScores.put(otherUserId, similarity);
+            }
+        });
+
+        // 从相似度高的用户中选取前5个
+        List<Map.Entry<Long, Double>> topTwelveUsers = similarityScores.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        // 打印这12个用户的ID和相似度
+        topTwelveUsers.forEach(entry -> System.out.println("User ID: " + entry.getKey() + ", Similarity: " + entry.getValue()));
+
+        // 根据这些用户的评分推荐电影，过滤掉目标用户已收藏的电影
+        List<Movie> recommendedMovies = topTwelveUsers.stream()
+                .flatMap(e -> userRatingsMap.get(e.getKey()).stream())
+                .map(MovieScore::getMovieId)
+                .distinct()
+                .filter(movieId -> !favoriteMovieIds.contains(movieId))
+                .map(movieId -> movieMapper.selectById(movieId))
+                .limit(12)  // 只推荐12部电影
+                .collect(Collectors.toList());
+
+        // 打印推荐的电影信息
+        System.out.println("Recommended Movies:");
+        recommendedMovies.forEach(movie -> System.out.println("Movie Name: " + movie.getName()));
+        return recommendedMovies;
+    }
+
+    /**
+     * 计算两部电影之间的余弦相似度。
+     *
+     * @param m1 第一部电影
+     * @param m2 第二部电影
+     * @return 两部电影之间的余弦相似度
+     */
+    @Override
+    public double calculateCosineSimilarity(Movie m1, Movie m2) {
+        // 提取两部电影的特征向量
+        Map<String, Double> features1 = extractFeatures(m1);
+        Map<String, Double> features2 = extractFeatures(m2);
+
+        // 初始化点积和模的平方和
+        double dotProduct = 0.0, norm1 = 0.0, norm2 = 0.0;
+
+        // 合并两部电影的特征键
+        Set<String> allFeatures = new HashSet<>(features1.keySet());
+        allFeatures.addAll(features2.keySet());
+
+        // 计算点积和模的平方和
+        for (String feature : allFeatures) {
+            double f1 = features1.getOrDefault(feature, 0.0);
+            double f2 = features2.getOrDefault(feature, 0.0);
+            dotProduct += f1 * f2;  // 累加点积
+            norm1 += f1 * f1;       // 累加第一部电影的特征向量的模的平方
+            norm2 += f2 * f2;       // 累加第二部电影的特征向量的模的平方
+        }
+
+        // 计算余弦相似度，防止除以零
+        return norm1 == 0 || norm2 == 0 ? 0 : dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+    }
+
+    /**
+     * 从电影对象中提取特征向量。
+     *
+     * @param movie 电影对象
+     * @return 电影的特征向量
+     */
+    public Map<String, Double> extractFeatures(Movie movie) {
+        Map<String, Double> features = new HashMap<>();
+        if (movie != null) {
+            // 电影类型和导演作为重要特征
+            features.put("type:" + movie.getType(), 3.0);
+            features.put("director:" + movie.getDirector(), 2.0);
+
+            // 处理电影的演员列表
+            if (movie.getActors() != null) {
+                Arrays.stream(movie.getActors().split(","))
+                        .forEach(actor -> features.put("actor:" + actor.trim(), 1.0));
+            }
+
+            // 假设评分范围从1到10
+            double normalizedRating = (Double.valueOf(movie.getRatingNum()) - 1) / 9;  // 归一化到0到1之间
+            features.put("rating", normalizedRating * 1.5);  // 示例：提高评分的权重
+            // 提取电影标签中的关键词
+            features.putAll(extractKeywords(movie.getTags()));
+        }
+        return features;
+    }
+
+    /**
+     * 从文本中提取关键词及其出现次数。
+     *
+     * @param text 待提取关键词的文本
+     * @return 关键词及其频率的映射
+     */
+    public Map<String, Double> extractKeywords(String text) {
+        Map<String, Double> keywords = new HashMap<>();
+        if (text != null) {
+            List<String> words = HanLP.segment(text).stream()
+                    .map(term -> term.word)  // 获取分词结果
+                    .filter(word -> word.length() > 1)  // 过滤单个字符
+                    .collect(Collectors.toList());
+
+            for (String word : words) {
+                // 累计每个关键词的频率
+                keywords.put("keyword:" + word, keywords.getOrDefault("keyword:" + word, 0.0) + 1.0);
+            }
+        }
+        return keywords;
+    }
+
+    /**
+     * *基于用户的协同过滤算法计算相似度
+     *
+     * @param ratings1
+     * @param ratings2
+     * @return
+     */
+    private double calculatePearsonCorrelation(List<MovieScore> ratings1, List<MovieScore> ratings2) {
+        // 首先找出两组评分中共同的电影ID
+        Set<Long> commonMovieIds = ratings1.stream()
+                .map(MovieScore::getMovieId)
+                .collect(Collectors.toSet());
+        commonMovieIds.retainAll(ratings2.stream()
+                .map(MovieScore::getMovieId)
+                .collect(Collectors.toSet()));
+
+        // 筛选出两位用户对共同电影的评分
+        List<Double> scores1 = ratings1.stream()
+                .filter(score -> commonMovieIds.contains(score.getMovieId()))
+                .map(MovieScore::getRating)
+                .map(Double::parseDouble) // 将 String 转换为 Double
+                .collect(Collectors.toList());
+
+        List<Double> scores2 = ratings2.stream()
+                .filter(score -> commonMovieIds.contains(score.getMovieId()))
+                .map(MovieScore::getRating)
+                .map(Double::parseDouble) // 同样需要转换
+                .collect(Collectors.toList());
+
+
+        // 计算两组评分的平均值
+        double avg1 = scores1.stream().mapToDouble(d -> d).average().orElse(0.0);
+        double avg2 = scores2.stream().mapToDouble(d -> d).average().orElse(0.0);
+
+        // 计算协方差和两个标准差的乘积
+        double covariance = 0.0;
+        for (int i = 0; i < scores1.size(); i++) {
+            covariance += (scores1.get(i) - avg1) * (scores2.get(i) - avg2);
+        }
+        double standardDeviation1 = Math.sqrt(scores1.stream().mapToDouble(d -> Math.pow(d - avg1, 2)).sum());
+        double standardDeviation2 = Math.sqrt(scores2.stream().mapToDouble(d -> Math.pow(d - avg2, 2)).sum());
+
+        // 计算皮尔逊相关系数
+        if (standardDeviation1 == 0 || standardDeviation2 == 0) return 0;  // 防止除以零
+        return covariance / (standardDeviation1 * standardDeviation2);
+    }
+
+    /**
+     * 用于存储电影及其相似度的辅助类。
+     */
+    static class MovieSimilarity {
+        Movie movie;
+        double similarity;
+
+        /**
+         * 构造函数。
+         *
+         * @param movie      电影对象
+         * @param similarity 与另一部电影的相似度
+         */
+        MovieSimilarity(Movie movie, double similarity) {
+            this.movie = movie;
+            this.similarity = similarity;
+        }
+    }
 }
