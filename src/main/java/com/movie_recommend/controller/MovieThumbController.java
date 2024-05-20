@@ -29,8 +29,6 @@ public class MovieThumbController {
     @Resource
     private MovieThumbService movieThumbService;
     @Resource
-    private MovieService movieService;
-    @Resource
     private UserService userService;
 
     /**

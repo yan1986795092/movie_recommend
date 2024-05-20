@@ -12,6 +12,7 @@ import com.movie_recommend.model.entity.User;
 import com.movie_recommend.model.enums.FileUploadBizEnum;
 import com.movie_recommend.service.UserService;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -47,39 +48,50 @@ public class FileController {
      */
     @PostMapping("/upload")
     public BaseResponse<String> uploadFile(@RequestPart("file") MultipartFile multipartFile,
-            UploadFileRequest uploadFileRequest, HttpServletRequest request) {
+                                           UploadFileRequest uploadFileRequest, HttpServletRequest request) {
+
+        // 获取上传业务类型
         String biz = uploadFileRequest.getBiz();
         FileUploadBizEnum fileUploadBizEnum = FileUploadBizEnum.getEnumByValue(biz);
+
+        // 检查业务类型是否有效
         if (fileUploadBizEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
+        // 验证文件是否符合要求
         validFile(multipartFile, fileUploadBizEnum);
+
+        // 获取当前登录用户
         User loginUser = userService.getLoginUser(request);
-        // 文件目录：根据业务、用户来划分
+
+        // 生成唯一文件名
         String uuid = RandomStringUtils.randomAlphanumeric(8);
         String filename = uuid + "-" + multipartFile.getOriginalFilename();
+
+        // 文件路径格式：/业务类型/用户ID/文件名
         String filepath = String.format("/%s/%s/%s", fileUploadBizEnum.getValue(), loginUser.getId(), filename);
-        File file = null;
+
+        File file = new File("C:\\Users\\86178\\Desktop\\电影推荐项目\\movie_recommend_front\\public" + filepath);  // 指定本地目录
+
         try {
-            // 上传文件
-            file = File.createTempFile(filepath, null);
+            // 确保父目录存在
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+
+            // 将上传的文件保存到本地文件
             multipartFile.transferTo(file);
-            cosManager.putObject(filepath, file);
-            // 返回可访问地址
-            return ResultUtils.success(FileConstant.COS_HOST + filepath);
-        } catch (Exception e) {
+
+            // 返回文件的可访问地址
+            return ResultUtils.success(file.getAbsolutePath());
+        } catch (IOException e) {
+            // 记录上传错误并抛出业务异常
             log.error("file upload error, filepath = " + filepath, e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
-        } finally {
-            if (file != null) {
-                // 删除临时文件
-                boolean delete = file.delete();
-                if (!delete) {
-                    log.error("file delete error, filepath = {}", filepath);
-                }
-            }
         }
     }
+
 
     /**
      * 校验文件

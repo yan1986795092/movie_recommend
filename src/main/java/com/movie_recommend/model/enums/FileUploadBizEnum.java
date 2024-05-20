@@ -10,6 +10,7 @@ import org.apache.commons.lang3.ObjectUtils;
  */
 public enum FileUploadBizEnum {
 
+    Carousel_Images("轮播图","carousel_images"),
     USER_AVATAR("用户头像", "user_avatar");
 
     private final String text;

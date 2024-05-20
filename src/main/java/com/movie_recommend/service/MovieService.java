@@ -8,6 +8,7 @@ import com.movie_recommend.model.vo.MovieVO;
 import com.movie_recommend.model.dto.movie.MovieQueryRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @Author yqq
@@ -50,4 +51,16 @@ public interface MovieService extends IService<Movie> {
      * @return
      */
     Page<MovieVO> getMovieVOPage(Page<Movie> moviePage, HttpServletRequest request);
+
+    Movie getTopRatedMovie();
+
+    boolean userHasData(Long userId);
+
+    List<Movie> recommendMovies(Movie targetMovie);
+
+    List<Movie> recommendMoviesUser(Long userId);
+
+    double calculateCosineSimilarity(Movie m1, Movie m2);
+
+
 }
