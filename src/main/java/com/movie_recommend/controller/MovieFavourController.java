@@ -17,10 +17,10 @@ import com.movie_recommend.service.UserService;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 电影收藏接口
@@ -98,4 +98,16 @@ public class MovieFavourController {
                 movieService.getQueryWrapper(movieFavourQueryRequest.getMovieQueryRequest()), userId);
         return ResultUtils.success(movieService.getMovieVOPage(moviePage, request));
     }
+
+    /**
+     * 获取被收藏电影总数
+     * @return
+     */
+    @GetMapping("/movie/total/favorites")
+    public BaseResponse<Integer> getTotalFavoritedMovies() {
+        int totalFavoritedMovies = movieFavourService.getTotalFavoritedMovies();
+        return ResultUtils.success(totalFavoritedMovies);
+    }
+
+
 }

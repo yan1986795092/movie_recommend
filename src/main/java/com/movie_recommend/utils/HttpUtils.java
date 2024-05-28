@@ -135,7 +135,12 @@ public class HttpUtils {
                     String picName = UUID.randomUUID().toString() + extName;
                     //下载图片
                     //声明OutputStream
-                    OutputStream outputStream = new FileOutputStream(new File("C://Users//86178//Desktop//yupi-antd-frontend-init-master//public//movie/" + picName));
+                    String basePath = "C:/Users/86178/Desktop/电影推荐项目/movie_recommend_front/public/movie/";
+                    File directory = new File(basePath);
+                    if (!directory.exists()) {
+                        directory.mkdirs(); // 创建目录
+                    }
+                    OutputStream outputStream = new FileOutputStream(new File(basePath + picName));
                     response.getEntity().writeTo(outputStream);
                     //返回图片名称
                     return picName;

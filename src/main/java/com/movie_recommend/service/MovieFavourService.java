@@ -1,9 +1,12 @@
 package com.movie_recommend.service;
 
+import co.elastic.clients.elasticsearch.sql.QueryRequest;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.movie_recommend.model.dto.user.UserQueryRequest;
 import com.movie_recommend.model.entity.Movie;
 import com.movie_recommend.model.entity.MovieFavour;
 import com.movie_recommend.model.entity.User;
@@ -41,4 +44,5 @@ public interface MovieFavourService extends IService<MovieFavour> {
      * @return
      */
     int doMovieFavourInner(long userId, long movieId);
+    Integer getTotalFavoritedMovies();
 }

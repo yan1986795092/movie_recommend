@@ -28,6 +28,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -56,6 +58,16 @@ public class MovieController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+
+    private static final String MOVIE_COUNT_KEY = "movie_count";
+
+    /**
+     * 基于用户的推荐算法
+     * @param request
+     * @return
+     */
     @GetMapping("/recommendationsByUser")
     public BaseResponse<List> getRecommendationsByUser(HttpServletRequest request) {
 
@@ -104,15 +116,16 @@ public class MovieController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Spider spider = new Spider();
-        //请求地址
+
+
+        User loginUser = userService.getLoginUser(request);
         //https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&page_limit=50&page_start=0
         String url = "https://movie.douban.com/j/search_subjects";
         Map<String, String> map = new HashMap<>();
         Map<String, String> mapTitle = new HashMap<>();
-        User loginUser = userService.getLoginUser(request);
         //设置请求参数
         map.put("type", "movie");
-        map.put("tag", "最新");
+        map.put("tag", "华语");
         map.put("sort", "recommend");
         map.put("page_limit", "10");
         //设置请求头
@@ -121,6 +134,7 @@ public class MovieController {
         mapTitle.put("Cookie", "bid=G1pcWQrJpYg; _pk_id.100001.4cf6=727f200318a7859e.1713174963.; __yadk_uid=OZyjR4dJSlBcTkJyLwjtBfhFbnasLStc; _vwo_uuid_v2=DBACDD4555EAAF89D5561DC48CE17CBDB|4d584d2dd850a199d43955daab29cf33; __utma=30149280.2064442863.1713174964.1713423666.1713506676.4; __utmc=30149280; __utmz=30149280.1713506676.4.3.utmcsr=cn.bing.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmb=30149280.1.10.1713506676; _pk_ref.100001.4cf6=%5B%22%22%2C%22%22%2C1713506679%2C%22https%3A%2F%2Fwww.douban.com%2F%22%5D; _pk_ses.100001.4cf6=1; __utma=223695111.1797087261.1713174964.1713423666.1713506679.4; __utmb=223695111.0.10.1713506679; __utmc=223695111; __utmz=223695111.1713506679.4.3.utmcsr=douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/; ap_v=0,6.0; __gads=ID=6e2348f87d357532:T=1713174964:RT=1713507496:S=ALNI_MZ271olrTvBjde2gyzWT9Hyd91SHg; __gpi=UID=00000ded6a185a71:T=1713174964:RT=1713507496:S=ALNI_MaBjeBeJSJxFYYFsvryVZlzaGaEjg; __eoi=ID=899ce58d0423512e:T=1713174964:RT=1713507496:S=AA-AfjbkbExeTBHcx1prfLxeYfRz");
         //获取前100条数据，可以自行更改
 
+        //获取前100条数据，可以自行更改
         for (int i = 0; i < spiderRequest.getNum(); i += 10) {
             map.put("page_start", i + "");
             String html = HttpUtils.doGetHtml(url, map, mapTitle);
@@ -216,6 +230,12 @@ public class MovieController {
 
     // region 增删改查
 
+    private void updateMovieCountInCache() {
+        Long currentMovieCount = movieService.count();
+        redisTemplate.opsForValue().set(MOVIE_COUNT_KEY, currentMovieCount);
+
+    }
+
     /**
      * 创建
      *
@@ -238,6 +258,10 @@ public class MovieController {
         movie.setThumbNum(0);
         boolean result = movieService.save(movie);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
+        // 更新 Redis 缓存中的电影数量
+        updateMovieCountInCache();
+
         long newMovieId = movie.getMovieId();
         return ResultUtils.success(newMovieId);
     }
@@ -264,6 +288,8 @@ public class MovieController {
         if (!oldMovie.getUserId().equals(user.getId()) && !userService.isAdmin(request)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
+        // 更新 Redis 缓存中的电影数量
+        updateMovieCountInCache();
         boolean b = movieService.removeById(id);
         return ResultUtils.success(b);
     }
@@ -288,6 +314,10 @@ public class MovieController {
         // 判断是否存在
         Movie oldMovie = movieService.getById(movieId);
         ThrowUtils.throwIf(oldMovie == null, ErrorCode.NOT_FOUND_ERROR);
+
+        // 更新 Redis 缓存中的电影数量
+        updateMovieCountInCache();
+
         boolean result = movieService.updateById(movie);
         return ResultUtils.success(result);
     }

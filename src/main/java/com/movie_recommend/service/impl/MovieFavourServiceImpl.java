@@ -29,6 +29,8 @@ public class MovieFavourServiceImpl extends ServiceImpl<MovieFavourMapper, Movie
     @Resource
     private MovieService movieService;
 
+    @Resource
+    private MovieFavourMapper movieFavourMapper;
     /**
      * 电影收藏
      *
@@ -105,6 +107,11 @@ public class MovieFavourServiceImpl extends ServiceImpl<MovieFavourMapper, Movie
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR);
             }
         }
+    }
+
+    @Override
+    public Integer getTotalFavoritedMovies() {
+        return movieFavourMapper.getTotalFavoritedMovies();
     }
 
 }

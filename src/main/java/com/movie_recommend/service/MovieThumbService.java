@@ -26,4 +26,6 @@ public interface MovieThumbService extends IService<MovieThumb> {
      * @return
      */
     int doMovieThumbInner(long userId, long movieId);
+
+    Integer getTotalLikedMovies();
 }

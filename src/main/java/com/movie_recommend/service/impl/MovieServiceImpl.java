@@ -22,11 +22,15 @@ import com.movie_recommend.service.UserService;
 import com.movie_recommend.utils.SqlUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -50,7 +54,14 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
     private MovieFavourMapper movieFavourMapper;
     @Resource
     private MovieScoreMapper movieScoreMapper;
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
 
+    private static final String MOVIE_COUNT_KEY = "movie_count";
+
+    private static final String RECOMMENDATION_KEY_PREFIX = "recommendation_";
+
+    private static final long CACHE_EXPIRATION = 10; // 缓存过期时间设置为10
     @Override
     public void validMovie(Movie movie, boolean add) {
         if (movie == null) {
@@ -223,7 +234,17 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
      */
     @Override
     public List<Movie> recommendMovies(Movie targetMovie) {
-        // 1. 从数据库中检索所有电影
+        String cacheKey = RECOMMENDATION_KEY_PREFIX + targetMovie.getMovieId();
+
+        // 尝试从缓存中获取推荐结果
+        ValueOperations<String, Object> valueOps = redisTemplate.opsForValue();
+        List<Movie> cachedRecommendations = (List<Movie>) valueOps.get(cacheKey);
+        if (cachedRecommendations != null) {
+            System.out.println("Returning cached recommendations for movie: " + targetMovie.getName());
+            return cachedRecommendations;
+        }
+
+        // 如果缓存中没有推荐结果，执行推荐算法
         List<Movie> allMovies = movieMapper.selectList(null);
 
         if (allMovies == null || allMovies.isEmpty()) {
@@ -231,26 +252,20 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
             return Collections.emptyList();
         }
 
-        // 2. 计算所有电影与目标电影的相似度，并存储为列表
         List<MovieSimilarity> sortedMovies = allMovies.stream()
-                // 3. 过滤掉目标电影
                 .filter(m -> m != null && !m.getMovieId().equals(targetMovie.getMovieId()))
-                // 4. 计算相似度
                 .map(m -> new MovieSimilarity(m, calculateCosineSimilarity(targetMovie, m)))
-                // 5. 根据相似度进行排序
                 .sorted((m1, m2) -> Double.compare(m2.similarity, m1.similarity))
-                // 6. 限制结果为前12部
                 .limit(12)
-                // 7. 收集到列表中
                 .collect(Collectors.toList());
-        System.out.println("Target Movie: " + targetMovie.getName());
-        // 8. 输出推荐的电影名称和相似度
-        System.out.println("Recommended Movies:");
-        sortedMovies.forEach(ms -> System.out.println(ms.movie.getName() + " - Similarity: " + ms.movie.getType() + " - Similarity: " + ms.similarity));
 
-        // 9. 返回电影列表
-        return sortedMovies.stream().map(ms -> ms.movie).collect(Collectors.toList());
+        List<Movie> recommendations = sortedMovies.stream().map(ms -> ms.movie).collect(Collectors.toList());
 
+        // 将推荐结果存入缓存，并设置失效时间
+        valueOps.set(cacheKey, recommendations, CACHE_EXPIRATION, TimeUnit.HOURS);
+        System.out.println("Cached recommendations for movie: " + targetMovie.getName());
+
+        return recommendations;
     }
 
     /**
@@ -261,55 +276,90 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
      */
     @Override
     public List<Movie> recommendMoviesUser(Long userId) {
-        // 获取所有用户的电影评分数据
-        List<MovieScore> allRatings = movieScoreMapper.selectList(null);
-        // 将评分数据按用户ID分组，便于后续按用户检索评分
-        Map<Long, List<MovieScore>> userRatingsMap = allRatings.stream()
-                .collect(Collectors.groupingBy(MovieScore::getUserId));
+        String cacheKey = "for user" + userId+ "recommendations:";
+        System.out.println("当前用户："+userId);
+        List<Movie> recommendedMovies = (List<Movie>) redisTemplate.opsForValue().get(cacheKey);
 
-        // 获取所有用户的电影收藏列表
-        List<MovieFavour> allFavorites = movieFavourMapper.selectList(null);
-        // 提取当前用户收藏的电影ID集合
-        Set<Long> favoriteMovieIds = allFavorites.stream()
-                .filter(favorite -> favorite.getUserId().equals(userId))
-                .map(MovieFavour::getMovieId)
-                .collect(Collectors.toSet());
+        if (recommendedMovies == null || isDatabaseUpdated(userId)) {
+            // 获取所有用户的电影评分数据
+            List<MovieScore> allRatings = movieScoreMapper.selectList(null);
+            // 将评分数据按用户ID分组，便于后续按用户检索评分
+            Map<Long, List<MovieScore>> userRatingsMap = allRatings.stream()
+                    .collect(Collectors.groupingBy(MovieScore::getUserId));
 
-        // 存储其他用户与当前用户的评分相似度
-        Map<Long, Double> similarityScores = new HashMap<>();
-        // 获取目标用户的评分列表
-        List<MovieScore> targetUserRatings = userRatingsMap.get(userId);
-        // 遍历每个用户的评分数据，计算与目标用户的相似度
-        userRatingsMap.forEach((otherUserId, otherRatings) -> {
-            if (!otherUserId.equals(userId)) {
-                double similarity = calculatePearsonCorrelation(targetUserRatings, otherRatings);
-                similarityScores.put(otherUserId, similarity);
-            }
-        });
+            // 获取所有用户的电影收藏列表
+            List<MovieFavour> allFavorites = movieFavourMapper.selectList(null);
+            // 提取当前用户收藏的电影ID集合
+            Set<Long> favoriteMovieIds = allFavorites.stream()
+                    .filter(favorite -> favorite.getUserId().equals(userId))
+                    .map(MovieFavour::getMovieId)
+                    .collect(Collectors.toSet());
 
-        // 从相似度高的用户中选取前5个
-        List<Map.Entry<Long, Double>> topTwelveUsers = similarityScores.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .limit(5)
-                .collect(Collectors.toList());
+            // 存储其他用户与当前用户的评分相似度
+            Map<Long, Double> similarityScores = new HashMap<>();
+            // 获取目标用户的评分列表
+            List<MovieScore> targetUserRatings = userRatingsMap.get(userId);
+            // 遍历每个用户的评分数据，计算与目标用户的相似度
+            userRatingsMap.forEach((otherUserId, otherRatings) -> {
+                if (!otherUserId.equals(userId)) {
+                    double similarity = calculatePearsonCorrelation(targetUserRatings, otherRatings);
+                    similarityScores.put(otherUserId, similarity);
+                }
+            });
 
-        // 打印这12个用户的ID和相似度
-        topTwelveUsers.forEach(entry -> System.out.println("User ID: " + entry.getKey() + ", Similarity: " + entry.getValue()));
+            // 从相似度高的用户中选取前5个
+            List<Map.Entry<Long, Double>> topTwelveUsers = similarityScores.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .limit(5)
+                    .collect(Collectors.toList());
 
-        // 根据这些用户的评分推荐电影，过滤掉目标用户已收藏的电影
-        List<Movie> recommendedMovies = topTwelveUsers.stream()
-                .flatMap(e -> userRatingsMap.get(e.getKey()).stream())
-                .map(MovieScore::getMovieId)
-                .distinct()
-                .filter(movieId -> !favoriteMovieIds.contains(movieId))
-                .map(movieId -> movieMapper.selectById(movieId))
-                .limit(12)  // 只推荐12部电影
-                .collect(Collectors.toList());
+            // 根据这些用户的评分推荐电影，过滤掉目标用户已收藏的电影
+            recommendedMovies = topTwelveUsers.stream()
+                    .flatMap(e -> userRatingsMap.get(e.getKey()).stream())
+                    .map(MovieScore::getMovieId)
+                    .distinct()
+                    .filter(movieId -> !favoriteMovieIds.contains(movieId))
+                    .map(movieId -> movieMapper.selectById(movieId))
+                    .limit(12)  // 只推荐12部电影
+                    .collect(Collectors.toList());
 
-        // 打印推荐的电影信息
-        System.out.println("Recommended Movies:");
-        recommendedMovies.forEach(movie -> System.out.println("Movie Name: " + movie.getName()));
+            // 更新Redis缓存，缓存时间为1小时
+            redisTemplate.opsForValue().set(cacheKey, recommendedMovies, 10, TimeUnit.MINUTES);
+        }
+
         return recommendedMovies;
+    }
+
+
+    /**
+     * 判断是否数据库更新
+     * @return
+     */
+    private boolean isDatabaseUpdated(Long userId) {
+        // 为每个用户生成独特的缓存键
+        String userMovieCountKey = MOVIE_COUNT_KEY + "_" + userId;
+
+        Long currentMovieCount = count();
+        Object cachedMovieCountObj = redisTemplate.opsForValue().get(userMovieCountKey);
+
+        Long cachedMovieCount = null;
+        if (cachedMovieCountObj != null) {
+            if (cachedMovieCountObj instanceof Integer) {
+                cachedMovieCount = ((Integer) cachedMovieCountObj).longValue();
+            } else if (cachedMovieCountObj instanceof Long) {
+                cachedMovieCount = (Long) cachedMovieCountObj;
+            } else {
+                throw new IllegalStateException("Unexpected value type in cache: " + cachedMovieCountObj.getClass());
+            }
+        }
+
+        // 如果Redis中没有缓存电影数量，或者当前电影数量与缓存的电影数量不一致，说明数据库已更新
+        if (cachedMovieCount == null || !cachedMovieCount.equals(currentMovieCount)) {
+            // 更新Redis中的电影数量
+            redisTemplate.opsForValue().set(userMovieCountKey, currentMovieCount);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -460,4 +510,6 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
             this.similarity = similarity;
         }
     }
+
+
 }
