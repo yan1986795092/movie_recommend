@@ -315,13 +315,15 @@ public class UserController {
         BeanUtils.copyProperties(userUpdateMyRequest, user);
 
         String oldUserAvatar = loginUser.getUserAvatar();
-        System.out.println("用户上传的头像：" + userUpdateMyRequest.getUserAvatar());
-        System.out.println("用户以前的头像：" + oldUserAvatar);
+//        System.out.println("用户上传的头像：" + userUpdateMyRequest.getUserAvatar());
+//        System.out.println("用户以前的头像：" + oldUserAvatar);
 
         // 判断用户是否上传了头像，如果没有上传则使用原来的头像
         if (userUpdateMyRequest.getUserAvatar() == null || userUpdateMyRequest.getUserAvatar().isEmpty()) {
             user.setUserAvatar(oldUserAvatar);
         }
+        String processedImageUrl = processImageUrl(userUpdateMyRequest.getUserAvatar());
+        user.setUserAvatar(processedImageUrl);
 
         // 对用户输入的原密码进行加密
         String oldUserPassword = userUpdateMyRequest.getOldUserPassword();
@@ -353,4 +355,25 @@ public class UserController {
 
         return ResultUtils.success(true);
     }
+
+    /**
+     * 处理路径
+     * @param imageUrl
+     * @return
+     */
+    private String processImageUrl(String imageUrl) {
+        // 只保留public后的部分，并将反斜杠替换为正斜杠
+        int index = imageUrl.indexOf("public");
+        if (index != -1) {
+            imageUrl = imageUrl.substring(index + "public".length());
+        }
+        return imageUrl.replace("\\", "/");
+    }
+
+    @GetMapping("/count")
+    public BaseResponse<Integer> getUserCount() {
+        int count = userService.getUserCount();
+        return ResultUtils.success(count);
+    }
+
 }

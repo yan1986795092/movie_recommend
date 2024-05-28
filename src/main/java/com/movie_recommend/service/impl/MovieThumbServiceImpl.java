@@ -26,6 +26,8 @@ public class MovieThumbServiceImpl extends ServiceImpl<MovieThumbMapper, MovieTh
     @Resource
     private MovieService movieService;
 
+    @Resource
+    private MovieThumbMapper movieThumbMapper;
     /**
      * 点赞
      * @param movieId
@@ -83,6 +85,11 @@ public class MovieThumbServiceImpl extends ServiceImpl<MovieThumbMapper, MovieTh
             }
         }
         return 0; // 默认返回 0
+    }
+
+    @Override
+    public Integer getTotalLikedMovies() {
+        return movieThumbMapper.getTotalLikedMovies();
     }
 }
 

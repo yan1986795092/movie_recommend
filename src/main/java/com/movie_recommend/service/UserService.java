@@ -7,6 +7,7 @@ import com.movie_recommend.model.entity.User;
 import com.movie_recommend.model.vo.LoginUserVO;
 import com.movie_recommend.model.vo.UserVO;
 import java.util.List;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 
@@ -115,4 +116,5 @@ public interface UserService extends IService<User> {
      */
     QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
 
+    int getUserCount();
 }

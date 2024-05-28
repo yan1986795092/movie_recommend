@@ -10,13 +10,12 @@ import com.movie_recommend.service.MovieService;
 import com.movie_recommend.service.MovieThumbService;
 import com.movie_recommend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 帖子点赞接口
@@ -51,4 +50,13 @@ public class MovieThumbController {
         return ResultUtils.success(result);
     }
 
+    /**
+     * 获取被点赞的电影总数
+     * @return Map<String, Integer>
+     */
+    @GetMapping("/movie/total/likes")
+    public BaseResponse<Integer> getTotalLikedMovies() {
+        int totalLikedMovies = movieThumbService.getTotalLikedMovies();
+        return ResultUtils.success(totalLikedMovies);
+    }
 }

@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkyupi_antd_frontend_init=self.webpackChunkyupi_antd_frontend_init||[]).push([[390],{96390:function(d,n,t){t.r(n),t.d(n,{default:function(){return e}});var f=t(67294),u=t(86745),E=t(85893);function e(){var o=(0,u.useOutletContext)();return(0,E.jsx)(u.Outlet,{context:o})}}}]);

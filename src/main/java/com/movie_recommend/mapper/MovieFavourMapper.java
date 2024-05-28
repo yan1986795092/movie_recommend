@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.movie_recommend.model.entity.Movie;
 import com.movie_recommend.model.entity.MovieFavour;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 /**
  * 电影收藏数据库操作
@@ -24,6 +25,9 @@ public interface MovieFavourMapper extends BaseMapper<MovieFavour> {
      */
     Page<Movie> listFavourMovieByPage(IPage<Movie> page, @Param(Constants.WRAPPER) Wrapper<Movie> queryWrapper,
                                     long favourUserId);
+
+    @Select("SELECT COUNT(DISTINCT movieId) FROM post_favour")
+    Integer getTotalFavoritedMovies();
 
 
 }

@@ -112,3 +112,12 @@ create table if not exists movie_score
     index idx_postId (movieId),
     index idx_userId (userId)
 ) comment '电影评分';
+
+-- 轮播图表
+create table if not exists carousel_images
+(
+    id         bigint auto_increment comment 'id' primary key,
+    carouselImages    text                               null comment '内容',
+    createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间'
+) comment '轮播图' collate = utf8mb4_unicode_ci;
