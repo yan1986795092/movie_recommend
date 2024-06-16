@@ -1,112 +1,17 @@
 具体代码在master分支，此处为展示界面
 
-### 主流框架 & 特性
+![欢迎页.png](%BB%B6%D3%AD%D2%B3.png)
 
-- Spring Boot 
-- Spring MVC
-- MyBatis + MyBatis Plus 数据访问（开启分页）
-- Spring Boot 调试工具和项目处理器
-- Spring AOP 切面编程
-- Spring Scheduler 定时任务
-- Spring 事务注解
+![轮播图和搜索.png](%C2%D6%B2%A5%CD%BC%BA%CD%CB%D1%CB%F7.png)
 
-### 数据存储
+![排行榜和电影列表.png](%C5%C5%D0%D0%B0%F1%BA%CD%B5%E7%D3%B0%C1%D0%B1%ED.png)
 
-- MySQL 数据库
-- Redis 内存数据库
-- 腾讯云 OSS 对象存储
+![推荐.png](%CD%C6%BC%F6.png)
+![推荐2.png](%CD%C6%BC%F62.png)
+![推荐3.png](%CD%C6%BC%F63.png)
 
-### 工具类
-- Easy Excel 表格处理
-- Hutool 工具库
-- Apache Commons Lang3 工具类
-- Lombok 注解
+![详情界面.png](%CF%EA%C7%E9%BD%E7%C3%E6.png)
 
-### 业务特性
-- 全局请求响应拦截器（记录日志）
-- 全局异常处理器
-- 自定义错误码
-- 封装通用响应类
-- Swagger + Knife4j 接口文档
-- 自定义权限注解 + 全局校验
-- 全局跨域处理
-- 长整数丢失精度解决
-- 多环境配置
+![信息管理.png](%D0%C5%CF%A2%B9%DC%C0%ED.png)
 
-## 业务功能
-- 用户登录、注册、注销、更新、检索、权限管理
-- 电影推荐
-- 电影点赞
-- 电影收藏、取消收藏、检索已收藏帖子
-- 电影和用户信息管理
-- 轮播图管理
-- 支持分业务的文件上传
-- 
-### 单元测试
-
-- JUnit5 单元测试
-- 示例单元测试类
-
-### 架构设计
-
-- 合理分层
-
-
-## 快速上手
-
-
-### MySQL 数据库
-
-1）修改 `application.yml` 的数据库配置为你自己的：
-
-```yml
-spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/my_db
-    username: root
-    password: 123456
-```
-
-2）执行 `sql/create_table.sql` 中的数据库语句，自动创建库表
-
-3）启动项目，访问 `http://localhost:8101/api/doc.html` 即可打开接口文档，不需要写前端就能在线调试接口了~
-
-![](doc/swagger.png)
-
-### Redis 分布式登录
-
-1）修改 `application.yml` 的 Redis 配置为你自己的：
-
-```yml
-spring:
-  redis:
-    database: 1
-    host: localhost
-    port: 6379
-    timeout: 5000
-    password: 123456
-```
-
-2）修改 `application.yml` 中的 session 存储方式：
-
-```yml
-spring:
-  session:
-    store-type: redis
-```
-
-3）移除 `MainApplication` 类开头 `@SpringBootApplication` 注解内的 exclude 参数：
-
-修改前：
-
-```java
-@SpringBootApplication(exclude = {RedisAutoConfiguration.class})
-```
-
-修改后：
-
-```java
-@SpringBootApplication
-```
-
+![个人收藏.png](%B8%F6%C8%CB%CA%D5%B2%D8.png)
