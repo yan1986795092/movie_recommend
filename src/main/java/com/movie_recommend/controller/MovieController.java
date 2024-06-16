@@ -125,7 +125,7 @@ public class MovieController {
         Map<String, String> mapTitle = new HashMap<>();
         //设置请求参数
         map.put("type", "movie");
-        map.put("tag", "华语");
+        map.put("tag", "豆瓣高分");
         map.put("sort", "recommend");
         map.put("page_limit", "10");
         //设置请求头
