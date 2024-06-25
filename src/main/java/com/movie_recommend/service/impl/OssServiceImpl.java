@@ -19,7 +19,7 @@ import java.util.Date;
  */
 @Service
 public class OssServiceImpl implements OssService {
-    @Autowired
+    @Autowired(required = false)
     private OSS ossClient;
 
     @Value("${aliyun.oss.bucketName}")
