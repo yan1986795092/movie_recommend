@@ -88,6 +88,12 @@ cos:
     secretKey: xxx
     region: xxx
     bucket: xxx
+oss:
+  endpoint: <your-endpoint>
+  accessKeyId: <your-accessKeyId>
+  accessKeySecret: <your-accessKeySecret>
+  bucketName: <your-bucketName>
+
 # 接口文档配置
 knife4j:
   enable: true
