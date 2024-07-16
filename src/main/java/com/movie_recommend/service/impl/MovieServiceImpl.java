@@ -7,12 +7,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hankcs.hanlp.HanLP;
 import com.movie_recommend.common.ErrorCode;
 import com.movie_recommend.constant.CommonConstant;
+import com.movie_recommend.MovieEsRepository.MovieEsRepository;
 import com.movie_recommend.exception.BusinessException;
 import com.movie_recommend.exception.ThrowUtils;
 import com.movie_recommend.mapper.MovieFavourMapper;
 import com.movie_recommend.mapper.MovieMapper;
 import com.movie_recommend.mapper.MovieScoreMapper;
 import com.movie_recommend.mapper.MovieThumbMapper;
+import com.movie_recommend.model.dto.movie.MovieEsDTO;
 import com.movie_recommend.model.dto.movie.MovieQueryRequest;
 import com.movie_recommend.model.entity.*;
 import com.movie_recommend.model.vo.MovieVO;
@@ -22,7 +24,11 @@ import com.movie_recommend.service.UserService;
 import com.movie_recommend.utils.SqlUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
@@ -45,7 +51,6 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
 
     @Resource
     private UserService userService;
-
     @Resource
     private MovieMapper movieMapper;
     @Resource
@@ -56,7 +61,10 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
     private MovieScoreMapper movieScoreMapper;
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
-
+    @Resource
+    private MovieEsRepository movieEsRepository;
+    @Resource
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
     private static final String MOVIE_COUNT_KEY = "movie_count";
 
     private static final String RECOMMENDATION_KEY_PREFIX = "recommendation_";
@@ -122,6 +130,41 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie>
         queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
                 sortField);
         return queryWrapper;
+    }
+
+    @Override
+    public void saveMovieToEs(MovieEsDTO movie) {
+        movieEsRepository.save(movie);
+    }
+
+    @Override
+    public List<MovieEsDTO> searchMovies(String keyword) {
+        Query searchQuery = new NativeSearchQueryBuilder()
+                .withQuery(QueryBuilders.multiMatchQuery(keyword, "name", "director"))
+                .build();
+        SearchHits<MovieEsDTO> searchHits = elasticsearchRestTemplate.search(searchQuery, MovieEsDTO.class);
+        return searchHits.getSearchHits().stream().map(hit -> hit.getContent()).collect(Collectors.toList());
+    }
+
+    @Override
+    public void syncMoviesToEs() {
+        List<Movie> movies = movieMapper.selectList(null);
+        for (Movie movie : movies) {
+            MovieEsDTO movieEsDTO = new MovieEsDTO();
+            movieEsDTO.setMovieId(movie.getMovieId());
+            movieEsDTO.setName(movie.getName());
+            movieEsDTO.setDirector(movie.getDirector());
+            saveMovieToEs(movieEsDTO);
+        }
+    }
+
+    @Override
+    public void syncMovieToEs(Movie movie) {
+        MovieEsDTO movieEsDTO = new MovieEsDTO();
+        movieEsDTO.setMovieId(movie.getMovieId());
+        movieEsDTO.setName(movie.getName());
+        movieEsDTO.setDirector(movie.getDirector());
+        saveMovieToEs(movieEsDTO);
     }
 
     @Override

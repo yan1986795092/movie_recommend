@@ -3,6 +3,7 @@ package com.movie_recommend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.movie_recommend.model.dto.movie.MovieEsDTO;
 import com.movie_recommend.model.entity.Movie;
 import com.movie_recommend.model.vo.MovieVO;
 import com.movie_recommend.model.dto.movie.MovieQueryRequest;
@@ -32,7 +33,15 @@ public interface MovieService extends IService<Movie> {
      * @return
      */
     QueryWrapper<Movie> getQueryWrapper(MovieQueryRequest movieQueryRequest);
-    
+
+
+    void saveMovieToEs(MovieEsDTO movie);
+
+    List<MovieEsDTO> searchMovies(String keyword);
+
+    void syncMoviesToEs();
+
+    void syncMovieToEs(Movie movie);
 
     /**
      * 获取电影封装
@@ -61,6 +70,5 @@ public interface MovieService extends IService<Movie> {
     List<Movie> recommendMoviesUser(Long userId);
 
     double calculateCosineSimilarity(Movie m1, Movie m2);
-
 
 }

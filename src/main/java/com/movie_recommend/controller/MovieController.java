@@ -12,6 +12,7 @@ import com.movie_recommend.constant.UserConstant;
 import com.movie_recommend.exception.BusinessException;
 import com.movie_recommend.exception.ThrowUtils;
 import com.movie_recommend.model.dto.movie.MovieAddRequest;
+import com.movie_recommend.model.dto.movie.MovieEsDTO;
 import com.movie_recommend.model.dto.movie.MovieQueryRequest;
 import com.movie_recommend.model.dto.movie.MovieUpdateRequest;
 import com.movie_recommend.model.dto.spider.SpiderRequest;
@@ -320,6 +321,18 @@ public class MovieController {
 
         boolean result = movieService.updateById(movie);
         return ResultUtils.success(result);
+    }
+
+
+    @GetMapping("/search")
+    public List<MovieEsDTO> searchMovies(@RequestParam String keyword) {
+        return movieService.searchMovies(keyword);
+    }
+
+    @PostMapping("/sync")
+    public String syncMoviesToEs() {
+        movieService.syncMoviesToEs();
+        return "Movies synchronized to Elasticsearch";
     }
 
     /**
